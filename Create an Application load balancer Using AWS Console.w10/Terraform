@@ -1,0 +1,563 @@
+Create an Application load balancer Using AWS Console/Terraform
+
+Owned by Estephe Kana
+Last updated: Aug 31, 2024
+12 min read
+What is Application Load Balancer (ALB)?
+
+The Application Load Balancer is a feature of Elastic Load Balancing that allows a developer to configure and route incoming end-user traffic to applications based in the AWS public cloud.
+
+In this document, we will create an application load balancer using AWS Console and then automate the process using Terraform.
+Prerequisites:
+
+    Terraform must be installed on your machine (installation steps here)
+
+    You must have an account on AWS
+
+    AWS CLI must be installed and configured. (installation steps Here)
+
+Part 1: Create an Application Load Balancer using AWS Console
+
+In this part, we will create an application load balancer on AWS using AWS Console. To do that, let’s follow the steps below:
+Step 1: Create a VPC for the application load balancer
+
+To create a VPC, follow the instructions below:
+
+    Open the AWS console, go to the VPC service
+
+    Click on Create VPC
+
+    In the VPC Settings section, set the following parameters:
+
+        As resources to create, choose VPC and more
+
+        As VPC name, enter loadbalancer
+
+        IPv4 CIDR block: 10.20.20.0/26
+
+        Number of Availability Zones: 2
+
+        Number of public subnets: 2
+
+        Number of private subnets: 2
+
+    Click on Create VPC 
+
+Step 2: Create a security group for the application loadbalancer
+
+To create a security group with the name alb-security-group, follow the instructions below:
+
+    Open the AWS console, go to the VPC service
+
+    In the navigation pane, choose Security groups.
+
+    Click on Create security group.
+
+    Enter the name alb-security-group and security group for the application load balancer as a description for the security group. 
+
+    From VPC, choose the loadbalancer-vpc
+
+    You can add a security group rule. In the Inbound rule section, click on Add rule and set these parameters:
+
+        Type: HTTP
+
+        Protocol: TCP
+
+        Port range: 80
+
+        Source: Anywhere-IPv4
+
+    Click on Create security group.
+
+Step 3: Create 2 EC2 instances in the loadbalancer-vpc
+
+Let’s create 2 EC2 instances that will be used as target servers with the following instructions:
+
+    Open the EC2 service
+
+    In the EC2 Dashboard, click on Launch instances
+
+    Instance name: webserver1
+
+    Instance AMI: Amazon Linux 2 AMI (HVM), SDD volume type (64-bit x86)
+
+    Instance type: t2.micro
+
+    Create the Key pair (if it does not exist yet): ec2-keypair
+
+    In the network settings, Click on Edit
+
+    Choose loadbalancer-vpc as VPC and private subnet of the first available zone as Subnet.
+
+    In the Firewall (security groups) option:
+
+        select Create security group
+
+        Security group name: webserver-sg
+
+        Description: security group for webservers
+
+        In the Inbound security groups rules section, Click on Add security group rule and set the following parameters:
+
+            Type: HTTP
+
+            Protocol: TCP
+
+            Port range: 80
+
+            Source type: Custom
+
+            Source: enter the name of the alb security group created previously (alb-security-group) to allow only the load balancer to have access to the web server on port 80.
+
+    Scroll down and click on Advanced Details
+
+    Scroll down to the User data textfield. Enter the following commands in the text field provided:
+
+#!/bin/bash
+sudo su
+yum update -y
+yum install httpd -y
+systemctl start httpd
+systemctl enable httpd
+echo "<html><h1><p> Welcome to Utrains.<br> You are redirected to ${HOSTNAME} to see how the load balancer is sharing the traffic.</p></h1></html>" > /var/www/html/index.html
+
+    Then click on Launch instance
+
+Follow the same instructions to create webserver2 with the private subnet of the second available zone and select the webserver-sg created for the first instance.
+
+Once the servers are successfully created, we can go to EC2 service to check it. In the EC2 service, click on Instances.
+Step 4: Configure a target group and register targets
+
+We can configure a target group in AWS as follows:
+
+    Open the AWS console, go to the EC2 service
+
+        In the navigation pane, choose Target Groups under Load Balancing section
+
+    Click on Create target group.
+
+    In the Basic configuration section, set the parameters as follows:
+
+        For Choose a target type, select Instances to specify targets by instance ID.
+
+        For Target group name, enter application-lb-tg
+
+        For Protocol, choose HTTP and set 80 for the port.
+
+        For VPC, select loadbalancer-vpc
+
+        Protocol version: choose HTTP1
+
+    In the Health checks section, let’s modify the default settings as follows:
+
+        Health check protocol: HTTP
+
+        Health check path:  /
+
+    For Advanced health check settings, set the following parameters:
+
+        Health check port: Traffic port
+
+        Healthy threshold: 3
+
+        Unhealthy threshold: 3
+
+        Timeout: 6
+
+        Interval: 100
+
+        Success codes: 200
+
+    Click on Next
+
+You will be redirected to the page where you can register EC2 instances created in the target group. Follow the instructions below to register webserver1 and webserver2:
+
+    Once on the Register targets page, select the two EC2 instances we created (webserver1 and webserver2)
+
+    Click on Include as pending below
+
+    Click on Create target group
+
+Step 5: Configure a load balancer and a listener
+
+A listener is a process configured with a protocol and a port to check for connections from clients to the load balancer.
+
+Follow the instructions below to configure a load balancer and a listener:
+
+    Open the AWS console, go to the EC2 service
+
+    In the navigation pane, choose Load Balancers.
+
+    Click on Create Load Balancer.
+
+    Under Application Load Balancer, Click on Create.
+
+    In the Basic configuration section, set the following parameters:
+
+        For Load balancer name, enter my-application-lb
+
+        For Scheme, choose Internet-facing
+
+        For IP address type, choose IPv4
+
+    In the Network mapping section, set the following parameters:
+
+        For VPC, choose loadbalancer-vpc
+
+        For Mappings, select all the availability zones and choose public subnet in each availability zone
+
+    For Security groups, Choose only alb-security-group
+
+    For Listeners and routing, leave the default listener that accepts HTTP traffic on port 80 and in the Default action, choose Forward to the target group application-lb-tg.
+
+    Review your configuration in the summary section, and choose Create load balancer.
+
+Note: It might take a few minutes for your load balancer to be fully set up and ready to route the traffic.
+Step 6: Test the load balancer
+
+After the load balancer is created, we can test it using the following instructions:
+
+    In the navigation pane, choose Target Groups.
+
+    Select the target group we created application-lb-tg
+
+    Choose Targets and verify that your instances are ready
+
+        If the status of instances is initial, it means that the instances are still in the process of being registered
+
+        If the status of instances is healthy, it means your instances are ready
+
+    In the navigation pane, choose Load Balancers.
+
+    Click on the load balancer’s name (my-application-lb)
+
+    in the Details section, copy the DNS name of my-application-lb
+
+    Open the browser and paste it, you will see the traffic redirected to one server, then refresh it and see the traffic redirected to the second server. 
+
+Traffic redirected to webserver1
+Traffic redirected to webserver2
+
+ 
+
+Note: Always remember to delete all the resources created when you are done. Thank you !!!
+
+In the next part, we will see how we can build this infrastructure much faster using Terraform.
+Part 2: Create an Application Load Balancer using Terraform
+Which resources will we create on ec2 with Terraform?
+
+    Create a target group
+
+    Create a listener for the load balancer
+
+    Create the load balancer
+
+    Create a vpc
+
+    Create a subnet
+
+    Create 2 security groups for the application load balancer and ec2 instances
+
+    Create a route table, an internet gateway and an internet route.
+
+To create an application load balancer using Terraform, follow the steps below:
+Step 1: Clone the source code of the infrastructure
+
+To provision our application load balancer, we will use a repository from the Utrains Github account.
+
+To clone the repository, use the below command in your terminal:
+cd ~
+cd terraform-projects
+git clone https://github.com/utrains/aws-loadbalancer-terraform.git
+cd aws-loadbalancer-terraform
+ls
+
+This repository contains the following files:
+
+    loadbalancer.tf
+
+This file is used to create resources needed for the application load balancer (target group, listener and load balancer). You can see its content in the following code:
+# Create a security group for ALB
+resource "aws_security_group" "alb_sg" {
+  name        = "alb-security-group"
+  description = "Application load balancer security group"
+  vpc_id      = aws_vpc.this.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = "0"
+    protocol    = "-1"
+    to_port     = "0"
+  }
+
+  tags = {
+    Name = "alb-security-group"
+  }
+}
+
+# Create a target group
+resource "aws_lb_target_group" "alb-target-group" {
+  name     = "application-lb-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.this.id
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 3
+    interval            = 10
+    matcher             = 200
+    path                = "/"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    timeout             = 6
+    unhealthy_threshold = 3
+  }
+}
+
+# Attach the target group to the AWS instances
+resource "aws_lb_target_group_attachment" "attach-app" {
+  count            = length(aws_instance.web-server)
+  target_group_arn = aws_lb_target_group.alb-target-group.arn
+  target_id        = element(aws_instance.web-server.*.id, count.index)
+  port             = 80
+}
+
+# Create a listener for load balancer
+resource "aws_lb_listener" "alb-http-listener" {
+    load_balancer_arn = aws_lb.application-lb.arn
+    port              = "80"
+    protocol          = "HTTP"
+  
+    default_action {
+      type             = "forward"
+      target_group_arn = aws_lb_target_group.alb-target-group.arn
+    }
+  }
+
+# Create the load balancer
+resource "aws_lb" "application-lb" {
+  name               = "application-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = [for subnet in aws_subnet.private : subnet.id]
+
+  enable_deletion_protection = false
+
+  tags = {
+    Environment = "application-lb"
+    Name        = "Application-lb"
+    
+  }
+}
+
+ 
+
+    outputs.tf
+
+This file contains the public DNS of the webservers and the DNS name of the load balancer. You can see its content in the following code:
+# print the url of the load balalncer app
+output "load_balancer_dns_name" {
+  value = aws_lb.application-lb.dns_name
+}
+# print the url of the webserver 1
+output "webserver1_public_dns" {
+    value = aws_instance.web-server.*.public_dns[0]
+}
+# print the url of the webserver 2
+output "webserver2_public_dns" {
+    value = aws_instance.web-server.*.public_dns[1]
+}
+
+ 
+
+    variables.tf
+
+This file defines variables for AWS region, subnet and availability zones. You can see its content in the following code:
+# define AWS Region
+variable "region" {
+  description = "This is aws region"
+  type        = string
+  default     = "us-east-1"
+}
+
+# define subnet variables
+variable "subnet_cidr_private" {
+  description = "cidr blocks for the private subnets"
+  default     = ["10.20.20.0/28", "10.20.20.16/28"]
+  type        = list(any)
+}
+
+# define availability zones
+variable "availability_zone" {
+  description = "availability zones for the private subnets"
+  default     = ["us-east-1a", "us-east-1b"]
+  type        = list(any)
+}
+
+ 
+
+    webservers.tf
+
+This file allows us to create resources (VPC, subnet, route table, internet gateway, etc ..) for our web servers. You can see its content in the following code:
+# configured aws provider with proper credentials
+provider "aws" {
+  region    = var.region
+  profile   = "default" 
+}
+
+# create a vpc
+resource "aws_vpc" "this" {
+  cidr_block = "10.20.20.0/26"
+  enable_dns_support = true
+  enable_dns_hostnames = true
+  tags = {
+    "Name" = "Application-lb"
+  }
+}
+
+# create a subnet
+resource "aws_subnet" "private" {
+  count             = length(var.subnet_cidr_private)
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = var.subnet_cidr_private[count.index]
+  availability_zone = var.availability_zone[count.index]
+  tags = {
+    "Name" = "Application-lb-private"
+  }
+}
+
+# create a route table
+resource "aws_route_table" "this-rt" {
+  vpc_id = aws_vpc.this.id
+  tags = {
+    "Name" = "Application-lb-route-table"
+  }
+}
+
+# create a route table association
+resource "aws_route_table_association" "private" {
+  count          = length(var.subnet_cidr_private)
+  subnet_id      = element(aws_subnet.private.*.id, count.index)
+  route_table_id = aws_route_table.this-rt.id
+}
+
+# create an internet gateway
+resource "aws_internet_gateway" "this-igw" {
+  vpc_id = aws_vpc.this.id
+  tags = {
+    "Name" = "Application-lb-gateway"
+  }
+}
+
+# create an internet route
+resource "aws_route" "internet-route" {
+  destination_cidr_block = "0.0.0.0/0"
+  route_table_id         = aws_route_table.this-rt.id
+  gateway_id             = aws_internet_gateway.this-igw.id
+}
+
+# Create a security group
+resource "aws_security_group" "web-server" {
+  name        = "allow_http_access"
+  description = "allow http traffic from alb"
+  vpc_id      = aws_vpc.this.id
+
+  ingress {
+    description = "traffic from alb"
+    from_port   = "80"
+    to_port     = "80"
+    protocol    = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+
+  }
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = "0"
+    protocol    = "-1"
+    to_port     = "0"
+  }
+  tags = {
+    "Name" = "web-server-sg"
+  }
+}
+
+# use data source to get a registered amazon linux 2 ami
+data "aws_ami" "amazon_linux_2" {
+  most_recent = true
+  owners      = ["amazon"]
+  
+  filter {
+    name   = "owner-alias"
+    values = ["amazon"]
+  }
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm*"]
+  }
+}
+
+# launch 2 EC2 instances and install apache 
+resource "aws_instance" "web-server" {
+  count                  = length(var.subnet_cidr_private)
+  instance_type          = "t2.micro"
+  ami                    = data.aws_ami.amazon_linux_2.id
+  vpc_security_group_ids = [aws_security_group.web-server.id]
+  subnet_id              = element(aws_subnet.private.*.id, count.index)
+  user_data              = file("install_httpd.sh")
+  associate_public_ip_address = true
+  tags = {
+    Name = "web-server-${count.index + 1}"
+  }
+}
+
+ 
+
+    install_httpd.sh
+
+This file contains the bash shell script to install the Apache web server in our two EC2 instances. You can see its content in the following code:
+#!/bin/bash
+sudo su
+yum update -y
+yum install httpd -y
+systemctl start httpd
+systemctl enable httpd
+echo "<html><h1><p> Welcome to Utrains.<br> You are redirected to ${HOSTNAME} to see how the load balancer is sharing the traffic.</p></h1></html>" > /var/www/html/index.html
+Step 2: Creation of resources in AWS
+
+In this step, we will create all the resources needed to launch our application load balancer.  To achieve this goal, we use the following commands:
+terraform init
+terraform apply -auto-approve
+
+Once the execution is complete, the output shows three values:
+
+    The DNS name of the load balancer
+
+    The public DNS of the web server 1
+
+    The public DNS of the web server 2
+
+You can see the output in the image below (yours should be different) :
+Step 3: Testing
+
+We have successfully created an application load balancer in AWS EC2 using Terraform. Let’s check our load balancer DNS on the browser. We can see how the load balancer is sharing the traffic in the images below:
+
+Note: the public DNS of the EC2 instances should be different for you.
+Traffic sent to webserver 1
+
+ 
+Traffic sent to webserver 2
+Step 4: Destroy the infrastructure
+
+Once we have finished using our application load balancer, we use Terraform to destroy the infrastructure with the following command:
+terraform destroy -auto-approve
+
+ 
