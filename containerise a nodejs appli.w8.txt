@@ -1,0 +1,166 @@
+In this project, we will containerize a simple Node.js application using docker. We will go through the steps below.
+
+    Deploy the application on a Linux machine
+
+    Write the Dockerfile using an Ubuntu base image 
+
+    write the Dockerfile using a node base image.
+
+ 
+A- Deploy  the application on a Linux machine ( it can be running anywhere , aws lightsail, aws ec2 , linode server or on prem servers).
+
+This section will explain how we can run the application without using docker, then in the latter part of the tutorial we will be using docker to run the application.
+
+ 
+Step1- Installing Environment dependencies
+
+Here, we will install the dependencies our application require to run.
+Installing Node.js and NPM
+
+Run the command below to install Node.js and NPM.
+sudo apt install nodejs npm
+
+Once it's installed, we will go ahead and install git.
+sudo apt -y install  git
+
+We are done with the Environment dependencies, let's go ahead and clone the application from GitHub.
+Step2- Clone the Application from GitHub
+
+To clone the application from GitHub, which is equivalent to copying the application code to our server, run the command below.
+git clone https://github.com/utrains/nodejs-test-app.git
+
+Once the code is cloned, move into the application directory.
+cd nodejs-test-app
+Step3- Install application base dependencies
+
+Here, we will install the dependencies needed for the application to run. The list of the dependencies should be provided by the developer.
+npm install
+
+After installing the dependencies, we need to expose the port needed by the application to run. In this case, our application runs on port 3000 
+
+note that all of these details are given to you in a meeting with the developer.
+Step4- Exposing port
+
+Exposing ports varies from one provided to another. For example, if you are on EC2 you will use security groups, if you are Google VMs, you will use Google firewalls etc.
+
+We will be Exposing Port 3000  as it is the port needed by our application.
+Step5- Start the application.
+
+To start the application, make sure you are in the application directory
+cd ~/nodejs-test-app
+
+now the command below 
+npm run start:dev
+
+once the application is running, copy the  IP Address of your instance and paste on the browser on port 3000
+
+ip-address:3000.
+
+Now that we are done installing on a physical server, let's go ahead and create a docker image that we will use to launch the same application.
+
+The idea behind this is for you to see how you can convert and application running on a Linux Server  to run on a container by simple following the steps we used to deploy the application on a Linux server but this time around on a docker file.
+
+ 
+B- Deploying the application using Docker.
+
+Before starting this section, make sure your docker lab is running, and you are in your docker server. Here is the link to the lab setup 
+
+ 
+
+In this section, we are going to write two docker files, one with a Node base image, and another with an Ubuntu base image.
+B-1 Ubuntu base image.
+
+In this section, we will show the equivalence of the various steps above (deploying in a Linux server), with the steps used in the Dockerfile.
+
+Before that, below is the docker file.
+FROM ubuntu:18.04
+RUN apt-get update 
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs npm 
+WORKDIR /app
+ADD . /app
+RUN npm install
+EXPOSE 3000
+CMD ["npm" , "run" ,"start:dev"]
+
+Now let's explain the various steps.
+Step1- base image 
+FROM ubuntu:18.04
+
+In this step, we are specifying the base image we want our application to run on. This step is the same as creating a light sail instance, or a virtual machine running Ubuntu 18.04. 
+Step2 - install environment dependencies. 
+
+This step spans line 2 to line  3 on the docker file. This step is equivalent to   step 1 on section A
+
+in this step, we install the various environmental dependencies in our container.
+Step3 - Copy application files
+
+this step spans from line 4 to line 5 on our Dockerfile above
+
+In this step, we copy all the application files in to our working directory inside the container. This step is equivalent to step 2  in section A.
+Step4 - Install application requirements
+RUN npm install
+
+This section installs the application base requirements, which is equivalent to step 3 In section A.
+Step5 - Exposing the port
+EXPOSE 3000
+
+In this step, we will expose the port needed by the application to run using the EXPOSE command in docker.  Which is port 3000. 
+
+This step is equivalent to step 4 in section A.
+Step5 - Start the application 
+CMD ["npm" , "run" ,"start:dev"]
+
+This step specifies the command to run when starting our container. This step is equivalent to step 5 in section A.
+
+We can now relate how  we converted the steps we use in running the application on a virtual machine to a docker file to run in a container.
+
+Let's now go ahead and build our image, then run it.
+Building and running the docker image 
+
+ 
+
+make sure you are in your docker lab server.
+
+Clone the project from GitHub 
+git clone https://github.com/utrains/nodejs-test-app.git
+
+After cloning the  project, move in to the project Directory and create the  Dockerfile.
+cd nodejs-test-app
+
+Create the Dockerfile and paste the docker file code above in it.
+vi Dockerfile
+
+Save and quit.
+
+Now run the below to build the image.
+docker build -t nodeapp .
+
+Once the build is done,
+
+Run the application.
+docker run -d  -p 8066:3000 nodeapp 
+
+ Paste the IP address of your instance on port 8066 on the browser.
+
+You will get the output below.
+
+ 
+
+Congratulations, you just deployed  your application using docker.
+
+We have created and run a docker image based on Ubuntu base image, let's create another image using Node.js as base image.
+B-2 Node base image.
+
+The Advantage of using Node as a base image is because it comes with Node and npm installed. So this saves us the stress of executing step 2 in section B-1 above and saves us more time. 
+
+Below is the docker file
+FROM node:20-alpine
+WORKDIR /app
+ADD . /app
+RUN npm install
+EXPOSE 3000
+CMD ["npm" , "run" ,"start:dev"]
+
+Go ahead and run the Dockerfile.
+
+That said, you should have in mind that before writing a docker file to deploy an application, you should know how the application is deployed. Remember to always work with the developer to get a better understanding of the functioning of the application.  

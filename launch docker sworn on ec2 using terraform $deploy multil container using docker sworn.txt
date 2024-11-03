@@ -1,0 +1,226 @@
+
+Launch Docker swarm on EC2 Instances using terraform
+Be the first to add a reaction
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Aug 29, 2024 by Estephe Kana
+4 min read
+
+In this tutorial, we will launch the Docker swarm lab using two methods.
+
+    Using Terraform 
+
+    Using Manual method
+
+Launch the infrastructure using Terraform
+
+Our infrastructure is made up of 3 EC2 instances. One of the instances will serve as the master node, the other 2 instances will serve as the worker nodes.
+
+Let's go ahead and create the infrastructure.
+
+Navigate to the directory
+cd DevOpsLab
+
+Now create a directory Docker which we will use to create all the Docker labs and projects.
+mkdir Docker
+
+Now move into the directory
+cd Docker
+
+and clone the code from GitHub
+git clone https://github.com/utrains/Docker-swarm-with-terraform.git
+
+Now, move into the Docker-swarm-with-terraform directory
+cd Docker-swarm-with-terraform
+
+Once in the directory, go ahead and create the infrastructure using Terraform.
+
+Run the commands below on your bash shell
+terraform init
+
+Next, run the terraform plan
+terraform plan
+
+Now, run Terraform apply to create the infrastructure
+terraform apply --auto-approve
+
+once the infrastructure is completely created, you will get the results below.
+
+Take note of the various outputs and their labels because you will need them later.
+
+Now copy the ssh login to the master as highlighted above and ssh into the master.
+
+Once inside the master, run the command below to verify if the swarm is up and running.
+docker node ls
+
+We can see that we have 3 nodes and the master node is tagged Leader.
+
+ You succeeded in launching your docker swarm cluster using Terraform. We will now see how we can do it manually.
+Manually creating a Docker Swarm
+
+We are going to create  a swarm with 3 nodes (that is, one controller and two worker nodes.) 
+
+To begin with, we need to create 3 servers. We can name the servers Master, Node1 and Node2 respectively. Since we are using AWS, we are going to create EC2 instances on AWS.
+
+Note that you need to expose the following ports for the swarm to function properly 
+
+    TCP port 2376 for secure Docker client communication. This port is required for the Docker Machine to work. A Docker Machine is used to orchestrate Docker hosts.
+
+    TCP port 2377. This port is used for communication between the nodes of a Docker Swarm or cluster. It only needs to be opened on manager nodes.
+
+    TCP and UDP port 7946 for communication among nodes (container network discovery).
+
+    UDP port 4789 for overlay network traffic (container ingress networking).
+
+    TCP port 22 to SSH into our instances remotely
+
+Since we are on AWS,  you will need to open these ports in the instance security group
+
+On all the 3 nodes, Run the commands below
+sudo yum update
+sudo yum -y install docker
+sudo service docker start
+sudo usermod -a -G docker ec2-user
+sudo chkconfig docker on
+sudo yum install python3-pip -y
+pip3 install docker-compose
+
+If you get the following error:
+
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+
+docker 7.1.0 requires urllib3>=1.26.0, but you have urllib3 1.25.4 which is incompatible.
+
+Fix it using the following commands:
+pip3 uninstall urllib3 -y
+pip3 install urllib3==1.26.14
+
+Once done, let's go ahead and configure the master
+Configure the Docker swarm master node
+
+on the EC2 console, click on the Instance-master  
+
+in the details, take note of the private IP we will need it letter to create a master node.
+
+After noting the private IP, click on connect to the master server (the server you want to use as the master).
+
+Once inside your instance, run the command below, replacing private-ip with that you copied above.
+docker swarm init --advertise-addr private-ip
+
+If the command runs successfully, the output will be similar to the one below.
+
+Now copy the highlighted command and ssh into each of the worker nodes (the servers you want to use as the worker nodes)  and run the command.
+
+You can see the output that says the node has joined the swarm.
+
+Once all the nodes have been added to the swarm, ssh into the master node and run the command below.
+docker node ls
+
+You should get an output similar to the one below.
+
+Congratulations, you just created your first docker swarm. You can practice more with the deployment of a multi-container app with Docker Swarm (link here)
+
+
+
+DEPLOYMENT STAGE DOWN
+
+
+Deploy a multicontainer app with Docker Swarm
+
+Owned by Suzie Fontang
+Last updated: Aug 29, 2024 by Estephe Kana
+3 min read
+
+In this tutorial, we will show the difference when deploying a multi-container app with a docker swarm
+Prerequisites
+
+Before starting this lab, you need to:
+
+    Make sure your docker swarm lab is up and running. You can follow the tutorial Here.
+
+Application architecture and description
+
+In this architecture, we have:
+
+    A Python web app (voting-app) which lets you vote between two options
+
+    A Redis queue which collects new votes
+
+    A .NET worker which consumes votes and stores them in a database
+
+    A Postgres database backed by a Docker volume
+
+    A Node.js (result-app) web app which shows the results of the voting in real time
+
+The voting application only accepts one vote per client. It does not register votes if a vote has already been submitted by a client.
+Infrastructure setup
+
+Our docker swarm will contain:
+
+    A master server: manager
+
+    two worker servers: node1 and node 2
+
+We will use Terraform to launch this infrastructure in AWS. Use this documentation to deploy our infrastructure in AWS
+Application deployment
+
+Once the cluster is up and properly configured, we can deploy our application following the steps:
+
+1- Create the .yml file in the master server
+
+Log in to the master server and create a .yml file called voting_app.yml
+vi voting_app.yml
+
+Copy and paste the content below in the file
+version: "3"
+services:
+   vote:
+       image: eesprit/voting-app-vote
+       ports:
+       - "8020:80"
+   redis:
+       image: redis:alpine
+   worker:
+       image: eesprit/voting-app-worker
+   db:
+       image: postgres:9.4
+       environment:
+           POSTGRES_HOST_AUTH_METHOD: trust
+   result:
+       image: eesprit/voting-app-result
+       ports:
+       - "8021:80"
+
+2- Deploy the app
+
+When running Docker Engine in swarm mode, you can use docker stack deploy to deploy a complete application stack to the swarm. Run the following command for the deployment:
+docker stack deploy --compose-file voting_app.yml App
+
+Then run this command to check if the service is started. 
+docker stack services App
+
+You will get the following result
+
+3- Test the app
+
+After running the commands, let’s test if the application is working:
+Open your browser, then use the IP address of the master followed by the port numbers 8020 and 8021: Mine here is master-ip:8020 and master-ip: 8021
+
+ 
+
+Now, use the IP address of any worker node followed by the port numbers 8020 and 8021: Mine here is worker-ip:8020 and worker-ip: 8021
+
+I voted for cats, and we can see 50% of the results of the cats from our screenshot.
+
+You can use docker swarm to deploy a multi-container application on multiple hosts.
+Cleanup
+
+When done with your instances, always remember to destroy them to avoid further charges on AWS.
+
+If you used Terraform for your infrastructure setup, you can easily use the command terraform destroy to clean up everything!
+
+ 
+
+
+
+ 

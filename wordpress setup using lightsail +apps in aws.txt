@@ -1,0 +1,65 @@
+Deploy a wordpress website with Lightsail
+
+Owned by Suzie Fontang
+Last updated: Aug 29, 2024 by Estephe Kana
+3 min read
+
+In this tutorial, we will follow the steps to deploy a simple WordPress website on Amazon Lightsail
+Go to the Lightsail console
+
+First login to your AWS management console using your email and password (the one you used while creating your AWS free tier account). Then click on services and go to the Compute domain. Select Lighsail 
+Launch an instance with the WordPress Blueprint
+
+On the Lightsail home page, let’s launch a server with the WordPress blueprint
+
+    Click on Create instance
+
+    In the Instance location, you can allow  the AZ to Virginia or click on Change AWS Region and Availability zone and select your preferred AZ 
+
+    Select the Linux/Unix platform
+
+ 
+
+    Select WordPress as a blueprint (Apps + OS)
+
+    Scroll down and click on Change SSH key pair
+
+    Click on Create New to create a new key (if you already have one and you know its location on your computer, you can choose it). Give the name wordpress-server then generate the key. Also, make sure you download the key.
+
+    Choose the $ 7 plan then check the instance Name. The name of the instance here is WordPress-1
+
+    Scroll down and click on Create instance. Wait for the status to change from Pending to Running. Then click on the instance name to get more information
+
+Connect to the instance
+
+Now, click on the shell icon to connect to the instance. In the terminal that opens, run the following command to display the password we will use to configure the website: 
+cat bitnami_application_password
+
+Copy the password and keep it handy somewhere on your computer.
+
+Let’s connect to the instance from the browser with the Public IP address.
+
+Copy the Public IP address and paste it into the browser to configure the WordPress site: IP-address/wp-admin.php
+Example: 34.200.201.106/wp-login.php
+Connect to the WordPress dashboard
+
+Now, connect to the WordPress Dashboard with the credentials:
+
+    Username: user
+
+    Password: The password you copied
+
+In the dashboard, click on Appearance then Theme.  Click on live preview for the theme Twenty Twenty-two to see how it is displayed. 
+
+Modify the theme and view what the site displays.
+
+Click on Activate Twenty Twenty-two, then choose Activate
+Screenshot from 2024-05-25 09-19-41.png
+
+Go back to the Dashboard, click on the site name then click on Visit Site
+
+You have a basic WordPress website up and running. You can make modifications as you wish.
+Cleanup
+
+When done with the instance, we need to delete it to avoid further charges. Make sure you delete the instance. 
+

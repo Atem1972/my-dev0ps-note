@@ -1,0 +1,109 @@
+
+Deploy a multicontainer app with and without docker-compose
+
+Owned by Suzie Fontang
+Last updated: Aug 29, 2024 by Estephe Kana
+3 min read
+
+In this tutorial, we will show the difference when deploying a multicontainer app with and without docker-compose.
+Prerequisites
+
+Before starting this lab, you need to:
+
+    Have a CentOS server up and running
+
+    Install Docker on the server. Use this link for installation if necessary.
+
+    Install docker-compose. Use this Link for the installation.
+
+    Connect remotely to the server as a regular user with root privileges. The user must also have access to docker commands (the user must belong to the docker group)
+
+You can also choose to set up your server with docker installed on it using Terraform as shown in this tutorial (this is recommended for fast lab setup)
+Application architecture and description
+Architecture breakdown
+
+In this architecture, we have:
+
+    A Python web app (voting-app) which lets you vote between two options
+
+    A Redis queue which collects new votes
+
+    A .NET worker which consumes votes and stores them in a database
+
+    A Postgres database backed by a Docker volume
+
+    A Node.js (result-app) web app which shows the results of the voting in real time
+
+The voting application only accepts one vote per client. It does not register votes if a vote has already been submitted from a client.
+Deploy the app without docker-compose
+
+To deploy this application, we need to run the 5 docker containers with the commands:
+docker run -d --name=redis redis
+docker run --name db -d -e POSTGRES_HOST_AUTH_METHOD=trust postgres:9.4
+docker run -d --name=vote -p 8020:80 --link=redis:redis eesprit/voting-app-vote
+docker run -d --name=result -p 8021:80 --link=db:db eesprit/voting-app-result
+docker run -d --name=worker --link=db:db --link=redis:redis eesprit/voting-app-worker
+
+After running the commands, let’s test if the application is working:
+Open 2 windows in your browser, then use your IP address followed by the port numbers 8020 and 8021: Mine here is Your-IP:8020 and Your-IP: 8021
+
+Do not forget to open the ports on your server to make them accessible. If you used terraform to create your lab, the ports are already opened.
+
+I voted for cats, and we can see 100% on the result of the cats  from our screenshot.
+
+Imagine we had 100 images to deploy for this application and deduce the number of commands we would need to run! Now, let’s try the docker compose method.
+
+To avoid some errors related to port numbers, delete all the containers we ran earlier
+
+You can use the following command to delete all the containers on your system at once:
+
+    docker rm -f $(docker ps -a -q)
+
+Deploy the app with docker-compose
+
+Let’s first create a folder in our home directory for the project
+cd ~
+mkdir docker-compose-voting
+cd docker-compose-voting
+
+Now, let’s create the docker-compose.yml file
+vi docker-compose.yml
+
+Copy and paste the following content in the file:
+version: "2"
+services:
+   vote:
+       image: eesprit/voting-app-vote
+       ports:
+       - "8020:80"
+   redis:
+       image: redis:alpine
+   worker:
+       image: eesprit/voting-app-worker
+   db:
+       image: postgres:9.4
+       environment:
+           POSTGRES_HOST_AUTH_METHOD: trust
+   result:
+       image: eesprit/voting-app-result
+       ports:
+       - "8021:80"
+
+Save and exit the file
+
+To start all the services at once, run the command:
+docker-compose up
+
+Open your browser to check out if all is working as expected! At Your-IP:8020 and Your-IP:8021 
+
+To stop the application, you just need to run the command:
+docker-compose down
+
+Compare the two methods!
+Cleanup
+
+When done with your instances, always remember to destroy them to avoid further charges on AWS.
+
+We are done working with the examples on docker compose, you can now go back to the slide and continue with Docker swarm (link to the slide).
+
+ 

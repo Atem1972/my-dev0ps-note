@@ -1,0 +1,21 @@
+Install Docker compose on Centos 9
+Be the first to add a reaction
+
+Owned by Estephe Kana
+Last updated: Aug 29, 2024
+1 min read
+
+To be able to use docker-compose command, you first need to install docker-compose on your system. The installation steps are quite straightforward.
+
+You can skip this step if you used Terraform to set up your lab, as docker-compose is already installed.
+
+To install docker-compose on Centos 9, we can use the curl command to download a stable docker-compose release
+sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+Now, let’s assign the execution permission to the file:
+sudo chmod +x /usr/local/bin/docker-compose
+
+Once that is done, you can check the version with the command:
+docker-compose --version
+
+The output will be something like docker-compose version 1.29.2, build 5becea4c

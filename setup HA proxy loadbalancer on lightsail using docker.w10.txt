@@ -1,0 +1,253 @@
+
+Setup the Haproxy load balancer on a lightsail server using docker
+
+Owned by Estephe Kana
+Last updated: Aug 31, 2024
+6 min read
+What’s a Haproxy?
+
+HAProxy is free and open-source software. It provides a high-availability load balancer and proxy server for TCP and HTTP-based applications that spread requests among multiple servers in the backend. It is written in C and has the reputation of being fast and efficient.
+Haproxy Lab setup
+
+For this setup, we need to create in AWS lightsail :
+
+    A centos 9 lightsail server for the Haproxy host.
+
+    Two web servers running on Docker containers will verify that the traffic coming from the client is hitting the Haproxy server, and then it will be forwarded to those two web servers.
+
+Step1: Create the Haproxy host 
+1- Haproxy host creation
+
+The Haproxy host here is a centos 9 lightsail server where we install haproxy. To create a lightsail server and install haproxy on it, follow the steps below:
+
+    Login to your AWS management console
+
+    Click on services and go to the Compute domain, then Click on Lighsail
+
+    Go to AWS lightsail Dashboard, Click on Create Instance
+
+image-20240707-055253.png
+
+ 
+
+    Choose Linux/Unix as a platform and CentOS 9 as a blueprint.
+
+ 
+image-20240707-055536.png
+
+ 
+
+    Go down and click on Change SSH key pair, then click on Create New to create a new key pair that will allow us to connect to the servers via SSH
+
+    Click on Create when you see the below message.
+
+    Enter haproxy-key as the name of the key pair and click on Generate key pair
+
+    Download the key pair file
+
+    Choose the size
+
+ 
+image-20240707-073914.png
+
+ 
+
+    Click on Create Instance button.
+
+We have successfully created a lightsail instance. Now let’s go ahead and configure it.
+2- Install Haproxy on the Host
+
+Once the lightsail instance is up and running, let’s configure it using the instructions below:
+
+    Click on the lightsail server we created and copy its Public IP address.
+
+    Open the Visual Studio code terminal and restrict access to the key pair with the following command:
+
+cd ~/Downloads
+chmod 400 haproxy-key.pem
+
+    Connect to the CentOS-1 server via SSH with haproxy-key, then enter yes and type the ENTER key:
+
+Specify your public IP address of the CentOS-1 server in the command below.
+ssh -i haproxy-key.pem ecé-user@3.145.8.150
+
+    Gain root access:
+
+sudo -i
+
+    Update the system
+
+yum update -y
+
+    Use the following command to install Haproxy
+
+yum install haproxy -y
+
+    Now, edit the file /etc/default/haproxy with vi to set ENABLED to 1 before starting the haproxy daemon:
+
+vi /etc/default/haproxy
+
+Copy and paste the content below in the file and save it.
+# This is sourced by both, the initscript and the systemd unit file, so do not
+# treat it as a shell script fragment
+
+# change the config file location if needed
+# CONFIG="/etc/haproxy/haproxy.cfg"
+ENABLED=1
+
+    Use the following commands to start and enable the daemon
+
+systemctl start haproxy
+systemctl enable haproxy
+Step2: Create two web servers on containers using docker
+
+In this step, we are going to run two containers from a build image. We will build the image from a docker file. The traffic will be shared on those two containers.
+
+Follow the steps below to create the web servers in the lightsail instance:
+
+    Connect to the lightsail server via SSH and gain root access
+
+    Install docker, start and enable it using the following commands:
+
+sudo yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+systemctl start docker
+systemctl enable docker
+
+    Create a PHP file that will be used to display the page content. Use this command to create the file: vi index.php, then copy and paste the below content:
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Load balancer lab</title>inde
+</head>
+<body>
+    <h2>Welcome to the Load balancer application.</h2>
+    <?php
+
+        $hostname = $_ENV['HOSTNAME'];
+        echo "<p> You are redirected to <b>$hostname</b> to see how the load balancer is sharing the traffic !!!</p>";
+    ?>
+</body>
+</html>
+
+Save and exit with :wq
+
+    Create a Dockerfile used to build the Docker image. Use the following command to create the file vi Dockerfile, then copy and paste the content below:
+
+# Use a based image that has webserver and php
+FROM php:7.4-apache
+
+# copy the index.php to the container 
+COPY index.php /var/www/html/
+
+# Expose the port 80 if needed
+EXPOSE 80
+
+    Build the docker image with the command below:
+
+docker build -t php-apache2 .
+
+    Once the image is created, let’s run the first container for webserver 1 with the following command:
+
+docker run -d --hostname webserver1 --name web1 -p 8000:80 php-apache2
+
+    Run the second container for webserver 2 using the command below:
+
+docker run -d --hostname webserver2 --name web2 -p 8005:80 php-apache2
+
+    To see the containers we created, use this command: docker ps -a
+
+Let’s connect to each of those containers in Bash and get their IP addresses with the commands below:
+
+    For webserver 1:
+
+docker exec -it 30e5247f0be3 bash
+cat /etc/hosts
+exit
+
+    For webserver 2:
+
+docker exec -it 065c9d7116ee bash
+cat /etc/hosts
+exit
+
+Save your container's IP addresses somewhere to configure the Haproxy.
+Step3: Haproxy Configuration
+
+We installed Haproxy on the Host, so you can check the haproxy config file using the below command:
+cat /etc/haproxy/haproxy.cfg
+
+We need to make some modifications there. Let’s empty this content and add the new content below.
+
+You can use this to delete all lines at once in vi: Press ESC to make sure you are in the command mode. Then type %d to delete all lines.
+vi /etc/haproxy/haproxy.cfg
+
+    Copy and paste the following content, change the IP addresses of containers in lines (24 and 25) by yours, then save the file and quit.
+
+global
+daemon
+maxconn 256
+
+defaults
+    mode http
+    timeout connect 5000ms
+    timeout client 50000ms
+    timeout server 50000ms
+
+frontend http-in
+    bind *:80
+    default_backend webservers
+
+backend webservers
+    balance roundrobin
+    # Poor-man's sticky
+    # balance source
+    # JSP SessionID Sticky
+    # appsession JSESSIONID len 52 timeout 3h
+    option httpchk
+    option forwardfor
+    option http-server-close
+    server web1 172.17.0.2:80 maxconn 32 check 
+    server web2 172.17.0.3:80 maxconn 32 check
+
+listen admin
+    bind *:8080
+    stats enable
+
+Now, for the modifications to be considered, restart the haproxy daemon:
+systemctl restart haproxy
+Step4: Testing
+
+In this step, we are going to copy and paste the IP address of the Haproxy host on the browser to see how the traffic is shared between our containers.
+
+As webserver 1 & 2 containers are running respectively on ports 8000 and 8005, we have to open them on the lightsail host server
+
+Follow the steps below to open those ports on the browser:
+
+    Go to the AWS LIghtsail dashboard and click on the Haproxy server
+
+    Click on Networking
+
+ 
+image-20240707-074255.png
+
+ 
+
+    Scroll down on the IPV4 Firewall bloc, then click on Add rule
+
+    Then paste 8000 as a port, then click on Create
+
+    Add port 8005 with the same process.
+
+Once it’s done, copy the public IP address of the Haproxy host and paste it into the browser. 
+
+As you can see in the image below the load balancer is redirecting the traffic to webserver 1.
+
+If you refresh the page, you can see that the traffic is redirected now to webserver 2.
+
+Congratulations, you have successfully set the Haproxy Load balancer on a lightsail server using two web servers running on docker containers.
+
+Always remember to delete your lightsail server when you are done. Thank you !!!

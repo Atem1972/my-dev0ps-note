@@ -1,0 +1,209 @@
+Launch a Wordpress app with and without Docker compose
+
+Owned by Suzie Fontang
+Last updated: Aug 29, 2024 by Estephe Kana
+5 min read
+
+In this tutorial, we will launch a simple WordPress website using Docker and then launch the same app using Docker-compose to see the difference.
+Prerequisites
+
+Before starting this lab, you need to:
+
+    Have a CentOS 9 server up and running
+
+    Install Docker on the server. Use this link for installation if necessary.
+
+    Install docker-compose. Use this Link for the installation.  
+
+    Connect remotely to the server as a regular user with root privileges. The user must also have access to docker commands (the user must belong to the docker group)
+
+You can also choose to set up your server with docker and docker-compose installed on it using Terraform as shown in this tutorial (this is recommended for fast lab setup) 
+
+Before going through this lab, make sure you gain the root access using the following command:
+sudo -i
+A-Launching with Docker
+
+To launch the application with Docker, we must start the database and WordPress containers separately. To launch them, use the commands below.
+1- Launch Database:
+docker run -e MYSQL_ROOT_PASSWORD=db_password -e MYSQL_DATABASE=wordpress --name wordpressdb -v database:/var/lib/mysql -d mariadb:10.4.12
+2- Launch WordPress Container:
+docker run -e WORDPRESS_DB_USER=root -e WORDPRESS_DB_PASSWORD=db_password --name wordpress --link wordpressdb:mysql -p 8020:80 -v wordpressdata:/var/www/html -d wordpress:4.9.4-php7.2-apache
+
+To access the app from the browser, you need to use the IP address of your server followed by the port number specified (here it's 8020)
+
+With this method, it's very difficult because it's not easy to run each container manually, especially in cases where we have so many containers. To solve this, we will use docker-compose to run our application containers.
+B-Launching with Docker Compose.
+
+Here, we will show how we can write a docker-compose file to launch the WordPress application above.
+1- Create the docker-compose.yml file
+
+Let’s create a folder for our project
+cd ~
+mkdir docker-compose-wordpress
+cd docker-compose-wordpress
+
+In this folder, let’s create the docker-compose.yml file
+vi docker-compose.yml
+
+The content of the file should look like the following: (copy and paste in the file)
+version: '3'
+services:
+  wordpress:
+    depends_on:
+        - mysql
+    image: wordpress:4.9.4-php7.2-apache
+    #container_name: wordpress
+    restart: always
+    environment:
+        - WORDPRESS_DB_USER=root
+        - WORDPRESS_DB_PASSWORD=db_password
+        - WORDPRESS_DB_HOST=mysql
+        - WORDPRESS_DB_NAME=webserver
+    ports:
+        - 8061:80
+    networks:
+        - web
+    volumes:
+        - wordpressdata:/var/www/html
+  mysql:
+    image: mariadb:10.4.12
+    #container_name: db
+    environment: 
+        - MYSQL_ROOT_PASSWORD=db_password
+        - MYSQL_USER=wp_user
+        - MYSQL_PASSWORD=wp_password
+        - MYSQL_DATABASE= webserver
+    networks:
+        - web
+    command: '--default-authentication-plugin=mysql_native_password'
+    volumes:
+        - database:/var/lib/mysql
+networks:
+    web:
+      driver: bridge
+volumes:
+    wordpressdata:
+    database:
+
+Save and exit the file
+2- Launch the application
+
+To avoid some errors related to port numbers, delete all the containers we ran earlier
+
+You can use the following command to delete all the containers on your system at once:
+
+    docker rm -f $(docker ps -a -q)
+
+Now, use the following docker-compose command to launch the app (run this without root access)
+docker-compose up -d
+
+If you get the following error: 
+
+ImportError: urllib3 v2.0 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'OpenSSL 1.0.2k-fips  26 Jan 2017'. 
+
+Fix it with the following command: 
+pip3 install urllib3==1.26.6
+
+or
+pip install urllib3==1.26.6
+
+ 
+
+The -d option is for detached mode
+
+You can check the containers that were launched using the command:
+docker-compose ps
+
+To access the app from the browser, you need to use the IP address of your server followed by the port number specified (here it's 8061)
+
+Do not forget to expose the port 8061 on your server to be able to access it
+
+You will get the page to configure the WordPress website from the browser. You can easily set up and modify the site template as seen in previous tutorials.
+3- Modify the docker-compose.yml file
+
+    Add the container names
+
+When running docker-compose ps in the terminal, we get containers with weird names (ec2user_mysql_1 and ec2user_WordPress_1). This is because the names were not specified in the docker-compose.yml file (we commented on those lines: line 7 and line 22)
+
+Vi in the file, uncomment the lines for container_names in the WordPress service and the MySQL service
+version: '3'
+services:
+  wordpress:
+    depends_on:
+        - mysql
+    image: wordpress:4.9.4-php7.2-apache
+    container_name: wordpress
+    restart: always
+    environment:
+        - WORDPRESS_DB_USER=root
+        - WORDPRESS_DB_PASSWORD=db_password
+        - WORDPRESS_DB_HOST=mysql
+        - WORDPRESS_DB_NAME=webserver
+    ports:
+        - 8061:80
+    networks:
+        - web
+    volumes:
+        - wordpressdata:/var/www/html
+  mysql:
+    image: mariadb:10.4.12
+    container_name: db
+    environment: 
+        - MYSQL_ROOT_PASSWORD=db_password
+        - MYSQL_USER=wp_user
+        - MYSQL_PASSWORD=wp_password
+        - MYSQL_DATABASE= webserver
+    networks:
+        - web
+    command: '--default-authentication-plugin=mysql_native_password'
+    volumes:
+        - database:/var/lib/mysql
+networks:
+    web:
+      driver: bridge
+volumes:
+    wordpressdata:
+    database:
+
+Now, run the command once more
+docker-compose up -d
+
+Check the container names this time
+docker-compose ps
+
+    Modify the port number
+
+Go ahead and modify the port number from 8061 to 8062 in the WordPress service, then relaunch the app and check the new port number
+docker-compose up -d
+
+NB: Also remember to expose port 8062 to make it accessible
+
+This means you can easily change a parameter in your docker-compose.yml file and deploy the application at any time
+
+To check the logs of the app, we can run 
+docker-compose logs
+Shutting down the app
+
+To shut down the app, we use the command:
+docker-compose down
+
+You can verify that the app is down with the command
+docker-compose ps
+
+There were two volumes specified at the end of our docker-compose.yml file. Let’s check if the volumes are still on our system even after deleting the app:
+
+docker volume ls
+
+Let’s check the wordpressdata volume for example. Navigate to the docker volumes folder and list the content of that volume
+sudo -i
+cd /var/lib/docker/volumes/wordpressdata/
+ls
+cd _data
+
+    ls
+
+    This means we can easily run another container and mount this volume to it to get a container that behaves the same as the one we previously deleted.
+
+ 
+
+We are done with the first example on docker-compose. In the next example, we will deploy another multi-container application (voting app) with and without docker-compose (Link to the tutorial).
