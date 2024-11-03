@@ -1,0 +1,317 @@
+
+Deploy a WordPress application using Amazon RDS as database
+July 9, 2024
+Lesson Progress
+0% Complete
+MARCH WE 2024 MARCH 2024 W10: The Load balancer, AWS services part 2 Deploy a WordPress application using Amazon RDS as database
+In Progress
+
+There is a WordPress app being actively developed and we need an environment in aws where to test the app before its deployment in production. For this we need a Linux  environment where to run the WordPress files, a database where to keep the data, and a sub domain with dev. keyword.  You are tasked to create this environment in aws.
+
+ 
+
+Solution:
+
+Couple ways we can do that:
+
+    Only one instance where everything is deployed including mysql.
+    A two tiers solution of an ec2 instance connected to an RDS instance.
+    We can use elastic beanstalk.
+    We can use a 3 tier multi layers or tiers app, also multi AZ.
+
+We will go with the second solution.
+
+ 
+
+The services needed:
+
+    Route 53 ( to create the subdomain  dev.yourdomain.com)
+    EC2 instance to run the wordpress site
+    RDS Instance for the database.
+
+Optimization:
+
+In the future, we can:
+
+    Add another instance in a different AZ
+    Add a certificate on our site for a secure connection using ACM ( amazon certificate manager.)
+
+NB: At work if you do not have access to all these services, you will submit a ticket to the corresponding team for some resources to be created.
+
+For example:
+
+    Database team ==> For the RDS instance,
+    Network team ==> For the Route 53 domain record,
+    Security team ==> For ssl certificate in ACM,
+    And more.
+
+Click here to set up the project.
+
+ 
+
+
+
+
+start
+Deploy a WordPress application Using Amazon RDS as Database.
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Aug 31, 2024 by Estephe Kana
+9 min read
+
+In this project, we will deploy a WordPress application using MYSQL database hosted on AWS RDS and the WordPress application hosted on AWS EC2.
+
+This project is divided into 4 parts as shown below:
+
+    Create a Database with RDS
+
+    Create EC2 Instance
+
+    Configure RDS database
+
+    configure WordPress on EC2
+
+Create a Database with RDS
+
+To begin, go to Amazon RDS in the AWS console. Click the Create database button to get started.
+
+Leave the database creation method as standard and scroll down to select the database engine.
+
+The first step is to choose the database engine you want to use. Select MySQL as your database engine.
+
+Scroll down to the Templates  section and select free tier 
+
+Next, you will specify the authentication settings for your MySQL deployment. This includes the database name, the master username and password. 
+
+In the Settings section, enter wordpress as your DB instance identifier. Then specify your master username and password for your database. Store the username and password for safekeeping, as you will need it in a later module.
+
+Leave the settings as default and scroll down to the Addition configuration bloc.
+
+RDS provides some additional configuration options to customize your deployment.
+
+Click on Addition configuration.
+
+Set the initial database name to wordpress. This will ensure RDS creates the database in your MySQL instance upon initialization. You will use this database name when connecting to your database.
+
+Now, scroll down and click on Create database button at the bottom of the page to create your database.
+
+You should see a success notice indicating that your database is being created.
+
+In this section, you created a fully managed MySQL database using Amazon RDS. In the next section, you will create an Amazon EC2 instance for running your WordPress site.
+Creating an EC2 instance to run the WordPress application
+
+To create your EC2 instance, go to Amazon EC2 in the AWS console. Click on the Launch instance button to open the instance creation wizard.
+
+On the page that shows up, enter the name of the EC2 as wordpress.
+
+For the image, select Amazon Linux.
+
+Take note of the Amazon Machine Image 
+
+ 
+
+Now scroll down to key pair  and click on create new key pair (or choose an existing key pair that you have in your Downloads folder)
+
+on the popup, enter the key pair name and click on create
+
+Now scroll down to network settings and select allow HTTP traffic from the internet.
+
+Take note of the security group name because you must configure the database. 
+
+Scroll down and click on Advance Details.
+
+On the Advance details, scroll down to user data and paste the code below in it.
+#!/bin/bash
+sudo yum install wget httpd mysql php php-mysql -y
+sudo wget https://wordpress.org/latest.tar.gz
+sudo tar -xzf latest.tar.gz
+sudo cp -r wordpress/* /var/www/html
+sudo amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
+sudo cd /var/www/html
+sudo cp /var/www/html/wp-config-sample.php /var/www/html/wp-config.php
+sudo chown -R apache:apache /var/www/html
+sudo systemctl start httpd 
+sudo systemctl enable httpd
+
+This user data will install MySQL, PHP, wget and Apache.
+
+It will also download and copy the WordPress application to the www directory.
+
+Now scroll down and click on Launch instance button to launch our instance.
+
+Once the instance is created, you will get the notification below
+
+ 
+
+You have successfully launched your EC2 instance. In the next section, we will configure your RDS database to work with your EC2 instance.
+Configure RDS Database To Work with EC2
+
+In this section, we will
+
+     configure the RDS instance to accept connection from EC2
+
+    ssh into the EC2, login to the RDS and create a new database.
+
+Configure the RDS instance to accept connection from EC2
+
+let's modify the RDS database to allow network access from your EC2 instance.
+
+In the previous module, you created security group rules to allow SSH and HTTP traffic to your WordPress EC2 instance. The same principle applies here. This time, you want to allow certain traffic from your EC2 instance into your RDS database.
+
+To configure this, go to the RDS databases in the AWS console. Click on the MySQL database you created in an earlier module in this lab.
+
+ 
+
+Scroll to the Connectivity & security tab in the display, and click on the security group listed in VPC security groups.
+
+The console will take you to the security group configured for your database. Click the Inbound tab, then click the Edit button to change the rules for your security group.
+
+Your default security group has a rule that allows all inbound traffic from other instances in the default security group. 
+
+Change the Type property to MySQL/Aurora (if it is not yet set), which will update the Protocol and Port Range to the proper values.
+
+ 
+
+Then, remove the current security group value configured for the rule and replace it with the security group name of your EC2 instance.
+
+The security group name you were asked to note when creating your instance.
+
+Search for the security group that you used for your EC2 instance.
+
+After you click, it will fill in the security group ID. This rule will allow MySQL access to any EC2 instance with that security group configured.
+
+To get the security group name if you forgot to note it down, 
+
+    go to the EC2 dashboard  Amazon EC2 in the AWS console
+
+    click on running instances and select the instance you created for the wordpress application
+
+    scroll down and click on security
+
+    there you will see the security group name copy and go back to the RDS. Database
+
+When you’re finished, hit the orange Save button to save your changes.
+
+ 
+ssh into the EC2, login to the RDS and create a new database.
+
+Now that your EC2 instance has access to your RDS database, you will SSH into your EC2 instance and run some configuration commands.
+
+Go to the EC2 instances page in the AWS console. Click on Connect.
+
+On the popup, click on ssh client.
+
+Then scroll down and copy the ssh connection. Please keep it somewhere, we will need it in the steps ahead.
+
+Now open git bash and move into the download directory.
+cd ~/Downloads
+
+Paste the ssh connect address on git bash
+
+You should have an active SSH session to your EC2 instance in the terminal. Now, you will connect to your MySQL database.
+
+Next, find the hostname for your RDS database in the AWS console. In the details of your RDS database, the hostname will be shown as the Endpoint in the Connectivity & security section.
+
+Next, run the following command in your terminal to connect to your MySQL database. Replace “<user>”  with the master username you configured when creating your RDS database, then <endpoint> with the endpoint.
+sudo mysql -h <endpoint> -P 3306 -u <mymasteruser> -p
+
+You will be prompted to enter the password and if everything goes well you will see the screen below.
+
+Finally, create a database user for your WordPress application and permit it to access the “WordPress” database.
+
+Run the following commands in your terminal:
+CREATE USER 'wordpress' IDENTIFIED BY 'wordpress';
+GRANT ALL PRIVILEGES ON wordpress.* TO wordpress;
+FLUSH PRIVILEGES;
+Exit
+
+Write down the username and password you configure, as it will be needed in the next section when setting up your WordPress installation.
+
+In the next section, you will configure your EC2 instance to run the WordPress application.
+Configure WordPress on EC2
+
+In this section, we will 
+
+    configure WordPress
+
+    deploy WordPress
+
+Notice that we already installed our application's dependencies(PHP, apache, MySQL) and downloaded WordPress when launching our ec2 instance.
+Configure WordPress
+
+In this step, you will set up WordPress configurations.
+
+Cd into the directory where we created a copy of the WordPress app files using the following commands:
+cd  /var/www/html/
+
+Then, open the wp-config.php file using the vi editor by running the following command.
+sudo vi wp-config.php
+
+You need to edit two areas of configuration.
+
+First, edit the database configuration by changing the following lines:
+
+ 
+
+The values should be:
+
+    DB_NAME: “wordpress”
+
+    DB_USER: The name of the user you created in the database in the previous section (Wordpress is mine)
+
+    DB_PASSWORD: The password for the user you created in the previous section. (Wordpress is mine) 
+
+    DB_HOST: The hostname of the database endpoint that you found in the previous section.
+
+After entering the values, scroll down to the second configuration section you need to configure is the Authentication Unique Keys and Salts. It looks as follows in the configuration file:
+/**#@+
+
+ */
+define( 'AUTH_KEY',         'put your unique phrase here' );
+define( 'SECURE_AUTH_KEY',  'put your unique phrase here' );
+define( 'LOGGED_IN_KEY',    'put your unique phrase here' );
+define( 'NONCE_KEY',        'put your unique phrase here' );
+define( 'AUTH_SALT',        'put your unique phrase here' );
+define( 'SECURE_AUTH_SALT', 'put your unique phrase here' );
+define( 'LOGGED_IN_SALT',   'put your unique phrase here' );
+define( 'NONCE_SALT',       'put your unique phrase here' );
+
+Replace the content of this section with what you will get from this link,  as shown in the screen capture below.
+
+You can save and exit.
+
+With the configuration updated, you are almost ready to deploy your WordPress site. In the next step, you will make your WordPress site live.
+Deploy WordPress
+
+In this step,  you will verify if the application is running.
+
+First, restart Apache
+sudo service httpd restart
+
+Then go to the EC2 dashboard and click on the instance you created. Copy the public IP address and paste it into the browser.
+
+You should see the WordPress welcome page if you refresh your EC2 public IP on your browser.
+
+ 
+
+That’s it. You have a live, publicly accessible WordPress installation using a fully managed MySQL database on Amazon RDS.
+
+In the next section, you will clean up your resources.
+Cleaning up resources
+
+It is always advisable to delete your resources after working on them to avoid being charged by AWS.
+Deleting EC2 instance
+
+Navigate to the EC2 Instances page and find your EC2 instance. Select it, and click the Actions button. Navigate to Instance State > Terminate and click it.
+
+Click Yes, terminate to terminate your instance.
+Deleting RDS instance
+
+To delete your RDS instance, navigate to the RDS Databases page in the AWS console. Find your WordPress RDS instance and select it. Then, click Actions and Delete.
+
+Type “delete me” into the confirmation box and click the Delete button to finalize the process.
+
+Congratulations, you completed the project.
+
+
+aws documentation link  https://docs.aws.amazon.com/

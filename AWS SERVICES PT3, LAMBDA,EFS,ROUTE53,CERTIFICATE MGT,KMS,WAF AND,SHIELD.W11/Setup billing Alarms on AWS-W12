@@ -1,0 +1,113 @@
+Setup billing Alarms on AWS
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Aug 31, 2024 by Estephe Kana
+3 min read
+Enabling billing alerts
+
+Before you can create an alarm for your estimated charges, you must enable billing alerts, so that you can monitor your estimated AWS charges and create an alarm using billing metric data.
+To enable the monitoring of estimated charges
+
+    Open the AWS Billing console at https://console.aws.amazon.com/billing/
+
+    Scroll down in the navigation pane (sidebar) and choose Billing Preferences.
+
+    By Alert preferences choose Edit
+
+    Choose Receive CloudWatch Billing Alerts.
+
+    Choose Save preferences.
+
+Creating a billing alarm
+
+Important: Before you create a billing alarm, you must set your Region to US East (N. Virginia). Billing metric data is stored in this Region and represents worldwide charges. 
+
+In this procedure, you create an alarm that sends a notification when your estimated charges for AWS exceed a defined threshold.
+To create a billing alarm using the CloudWatch console
+
+    Open the CloudWatch console at https://console.aws.amazon.com/cloudwatch/.
+
+    In the navigation pane, choose Alarms, and then select All alarms.
+
+    Choose Create alarm.
+
+image-20240715-045541.png
+
+ 
+
+    Choose Select metric. In Browse, choose Billing, and then choose Total Estimated Charge.
+
+     
+
+ 
+
+    Note: If you don’t see the Billing/Total Estimated Charge metric, enable billing alerts, and change your Region to US East (N. Virginia). For more information, see Enabling billing alerts.
+
+    Select the box for the Estimated Charges metric, click on USD and then choose Select metric.
+
+    For Statistic, choose Maximum.
+
+    For Period, choose 6 hours.
+
+ 
+
+    For Threshold type, choose Static.
+
+    For Whenever Estimated Charges is. . ., choose Greater.
+
+    For than. . ., define a threshold value that triggers your alarm (for example, 200 USD).
+
+Note: I choose 200 USD as my threshold because this is an enterprise account but in your case, you can put the threshold to 5 USD or less.
+
+    In Additional Configuration, do the following:
+
+        For Data points to alarm, specify 1 out of 1.
+
+        For missing data treatment, choose Treat missing data as missing.
+
+    Choose Next.
+
+ 
+
+    On the next page Under Notification:
+
+        Then under alarm state, select in alarm
+
+        Select create new topic
+
+        Enter a topic name (if not generated automatically)
+
+        Enter the email to receive the notification
+
+    Then click on Create topic
+
+ 
+
+ 
+
+    Now scroll down and choose Next.
+
+    Under Name and description, enter a name for your alarm.
+
+        (Optional) Enter a description of your alarm.
+
+    Choose Next
+
+    Under Preview and create, ensure your configuration is correct, then scroll down and choose Create alarm.
+
+ 
+NOTE:
+
+ 
+
+To receive alarms, you will need to verify your email.
+
+    Open your email and accept the verification email sent by Amazon.
+
+Click on confirm subscription.
+
+With this setup, you can be able to monitor your AWS bills and avoid paying excessive bills.
+
+
+
+https://dataservicegroup.atlassian.net/wiki/x/JYCmgQ

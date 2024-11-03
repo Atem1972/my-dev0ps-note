@@ -1,0 +1,116 @@
+Data Services Group
+Create an Amazon Redshift Cluster
+
+Owned by Estephe Kana
+Last updated: Aug 31, 2024
+4 min read
+Objective:
+
+At the end of this tutorial, you must be able to create a redshift cluster and interact with databases and tables.
+Prerequisite:
+
+To have an AWS account created.
+Create a Cluster in AWS Redshift
+
+To create an AWS Redshift Cluster, follow the steps below:
+
+    Login to your account from the AWS Console
+
+    Click on the Search bar, then type redshift and click on Amazon Redshift service
+
+    Click on Clusters in the left menu of the AWS Redshift dashboard
+
+    Scroll down and click on Create cluster
+
+    Set the Cluster Configuration as follows:
+
+        Cluster identifier: myredshift-cluster
+
+        Node type: dc2.large
+
+        Leave the remaining config as the default
+
+     Scroll down and set the database configurations as follows:
+
+        Admin user name: awsuser
+
+        Check Manually add the admin password
+
+        Admin user password: School123
+
+These database configurations are used to create a default database called dev.
+
+    Scroll down to Additional Configurations and make sure that use defaults button is active. This default config means the cluster will use the default VPC and default security group.
+
+    Click on Create Cluster
+
+The cluster’s creation process will take some time, so you have to wait until the process is finished.
+
+When the cluster has been successfully created, you will get the below information in Clusters
+Connect to the database and make some queries
+
+Before making some queries with our Redshift cluster, we have to connect to the dev database. 
+
+    To connect to the database, click on Query editor in the left panel, then click on Connect to database
+
+    In the window that appears, fill in the information as follows:
+
+         Database name: dev
+
+        Database user: awsuser
+
+    Then click on Connect
+
+    Once done, you will see in the Editor our dev database and the public schema.
+
+Let’s run some queries to interact with our database.
+
+Query 1: create a table that will store personal information about the DevOps team in your company.
+
+    Use devops_team as the table name, copy the following code and paste it into the query block shown in the previous image. 
+
+create table devops_team(
+  firstname varchar(30),
+  lastname varchar(30)
+);
+
+    To execute the query, let’s click on the Run button down the script. Your query has been completed.
+
+Query 2: Insert data of 3 members of the DevOps team.
+
+    To create a new query click on +, then copy and paste the below code.
+
+ 
+insert into devops_team values
+('Estephe','Kana'),
+('John','Obi'),
+('Mike','Jordan');
+
+    After pasting the code, run it and the result will show: completed.
+
+Query 3: Get the list of all the members of the DevOps team
+
+    To get the list of DevOps engineers, create a new query, then copy and paste the following code in there.
+
+select * from devops_team;
+
+Run this query, then you will get the output below:
+
+To better understand the query commands, do some research on Google about SQL commands. 
+Delete the resource
+
+To delete the AWS Redshift cluster we created, follow the instructions below:
+
+    Go to the AWS Redshift dashboard, in the left panel click on Clusters, then choose myredshift-cluster
+
+    Click on Actions, then choose Delete
+
+    In the window that appears, type delete and check the button if you want to Create a final snapshot. Type in delete and click on Delete cluster.
+
+    The process will take some time to delete the cluster completely.
+
+
+
+
+
+https://dataservicegroup.atlassian.net/wiki/x/uwB9gg  # OFFICIAL LINK

@@ -1,0 +1,58 @@
+Data Services Group
+Create and invoke a Lambda function
+
+Owned by Suzie Fontang
+Last updated: Aug 31, 2024 by Estephe Kana
+2 min read
+Objective:
+
+At the end of this demo, you must be able to create and invoke a simple lambda function
+Prerequisites
+
+Before starting, you must have an account on AWS.
+Create the lambda function
+
+To create a Lambda function with the AWS console, you must:
+
+    Login to your AWS management console then click on Services on the  navbar
+
+    On the drop-down click on Compute then choose Lambda
+
+In the Lambda console page, click on Create function
+
+Select Author from scratch option then fill in some Basic information:
+
+    For Function name, enter my-function.
+
+    For Runtime, confirm that Node.js 20.x is selected.
+
+    Allow other parameters as default and scroll down to click on Create function.
+
+Screenshot from 2024-03-15 06-15-09.png
+
+You have successfully created your first lambda function
+Invoke the Lambda function
+
+After creating a lambda function, we need to invoke it. To do that:
+
+    Scroll down to the Code source section
+
+    Click on Test dropdown and select Configure Test event
+
+    Select Create new event then, enter the Event name: test1
+
+    Scroll down the page and click on Save
+
+Now, check the execution result by clicking on the Test button. The Execution result shows the execution status as succeeded.
+
+This is just a simple demo of creating and invoking a lambda function. 
+Clean up
+
+If you are done working with the example function, delete it.
+To delete the Lambda function we created, scroll up on the function page then click on Actions
+Choose Delete function
+
+In the Delete function dialog box, choose Delete.
+
+
+https://dataservicegroup.atlassian.net/wiki/x/HICygQ 

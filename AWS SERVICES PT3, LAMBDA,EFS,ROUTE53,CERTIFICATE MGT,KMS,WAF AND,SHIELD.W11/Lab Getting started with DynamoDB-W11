@@ -1,0 +1,115 @@
+Data Services Group
+Lab: Getting started with DynamoDB
+
+Owned by Suzie Fontang
+Last updated: Aug 31, 2024 by Estephe Kana
+3 min read
+
+In this Lab, we are going to do the following actions:
+
+    Create a table for the DevOps team in DynamoDB
+
+    Write data in the created table (insert records)
+
+    Read, Update and query data
+
+    Clean up 
+
+Prerequisites: 
+
+Before starting this lab, you must have an AWS account
+Create a table in DynamoDB
+
+Here, we are going to create a table called devopsteam. This table will contain some information about each member of the DevOps team at the company (Name, Position, Contact, Years)
+
+To create the table, you need to: 
+
+    Login to your AWS account, click Services, then go to the Database domain. Select DynamoDB
+
+    Now, click on the button Create table
+
+    Enter the name of the table: devopsTeam
+
+    For the Partition key, enter Name and for the Sort key, enter Position
+
+    Allow other parameters as default and scroll down to click on Create table 
+
+ Insert items in the table
+
+To insert an item in the table devopsTeam, follow the steps:
+
+    Click on the Table name in the list of DynamoDB tables: devopsTeam
+
+    Click on the Explore table items button
+
+    Scroll down and click on Create item
+
+ 
+
+Let’s add a new attribute to the table for the contact of the members.
+
+    Click on Add new attribute drop down, then select Number to add the team member’s contact
+
+    Do the same, and select Number to add the number of years in the company
+
+ 
+
+    Put in some values and click on Create item
+
+Repeat the process and create 2 other items:
+
+Item 2:
+
+    Name: Emma David
+
+    Position: member
+
+    Contact: 345675432
+
+    Years: 3
+
+Item 3:
+
+    Name: Kelvin Martin
+
+    Position: member
+
+    Contact: 9809870978
+
+    Years: 3
+
+Read update and query data from the table
+
+After creation, the items are available in the item list and you can consult any and modify them if necessary.
+
+Let’s run a query to get the number of years Kelvin Martin in the company for example:
+
+    In the DynamoDB tables, click on the table name: devopsTeam
+
+    Then, click on the button Explore table items
+
+    Now click on Query. Click on the drop-down under Select attribute projection and choose Specific attributes
+
+ 
+
+     Enter the attribute name (Years) and the Name of the member (Kelvin Martin) 
+
+    Click on Run to execute the query and see what you get 
+
+You can run more queries to better understand
+Delete the table
+
+Deleting a table is quite simple. Click on Tables on the left column under Dashboard
+
+Select the tables' check button then click on Delete
+
+Confirm the deletion in the pop-up that opens and that’s it!
+
+Everything that is done in the AWS console interface can also be done with the AWS CLI.
+
+Exercise: Find the AWS CLI commands needed to create the table, create, list, update the items we did in this demo, and delete the table. 
+
+ 
+
+ 
+https://dataservicegroup.atlassian.net/wiki/x/AYBAhQ    THE OFFICIAL LINK
