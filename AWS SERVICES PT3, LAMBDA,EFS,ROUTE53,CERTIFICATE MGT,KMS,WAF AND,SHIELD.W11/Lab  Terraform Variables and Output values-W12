@@ -1,0 +1,231 @@
+https://github.com/utrains/Terraform-associate-class/tree/main/terraform_variableand_provisioners  #GITHUB LINK
+
+
+
+
+Data Services Group
+Lab : Terraform Variables and Output values
+
+Owned by Suzie Fontang
+Last updated: Jul 20, 2024 by Estephe Kana
+5 min read
+Description :
+
+In this Lab, we will provide a web server in AWS. The pedagogical objective of this Lab is to :
+
+    Learn how to create and use simple variables (string, numeric, and bool) and complex variables (List, Object).
+
+    Learn how to display the results of a Terraform code in the terminal using output values
+
+Take a look at the contents of each file, then read the comments to better understand
+
+Here is the structure of our files and directories
+terraform-module-pratice
+│   ├── lab2-terraform
+│       ├── main.tf
+│       ├── variables.tf
+│       ├── outputs.tf
+│       ├── security_group.tf
+1- Creating variables
+
+In your terminal, switch to the devops directory, let’s create a folder called terraform-practice for this exercise.
+
+cd ~
+cd devops/terraform-module-practice
+mkdir lab2-terraform
+
+    cd lab2-terraform
+
+With your favourite code editor, create a file called variables.tf.
+
+    This file will contain a list of variables and their default values.
+
+    Its content should look like the one below
+
+variables.tf file
+variable "region" {
+  type    = string
+  default = "us-east-1"
+}
+
+variable "typeinstances" {
+  type    = string
+  default = "t2.micro"
+  description   = "type of the instances"
+}
+2- Outputs variables
+
+Now, let’s create a file called output.tf 
+
+    The output.tf file will contain the list of our output variables that will display some values of our infrastructure after the terraform apply command is executed.
+
+output.tf  file
+# print the url of the  server
+output "webserver_url" {
+  value     = aws_instance.ec2_instance.public_dns
+}
+
+# print the timestamp for the execution
+output "Time-Date" {
+  description = "Date/Time of Execution"
+  value       = timestamp()
+}
+3- Provision the instance remote-exec provisioner
+
+Now, create a main.tf file. In the main.tf file, we perform the following actions:
+
+    Use a provisioner to connect to the server via SSH and run a shell script on this server to install httpd
+
+main.tf file
+# configured aws provider with proper credentials
+provider "aws" {
+  region = var.region
+}
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0.0"
+    }
+  }
+}
+
+# use data source to get a registered amazon linux 2 ami
+data "aws_ssm_parameter" "ami_id" {
+  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+}
+
+
+resource "aws_instance" "ec2_instance" {
+  ami                    = data.aws_ssm_parameter.ami_id.value
+  instance_type          = var.typeinstances
+  subnet_id              = aws_default_subnet.default_az1.id
+  vpc_security_group_ids = [aws_security_group.webserver_security_group.id]
+  key_name               = aws_key_pair.webserver_key.key_name
+
+  # connection to the server using ssh and ec2-user
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    private_key = file(local_file.ssh_key.filename)
+    host        = aws_instance.ec2_instance.public_ip
+  }
+
+  # Use remote-exec to provide this ec2-server and install on it our web server (httpd)
+  provisioner "remote-exec" {
+    inline = [
+      "sudo yum -y install httpd && sudo systemctl start httpd",
+      "echo '<h1>My Test Website using Terraform Provisioner</h1>' > index.html",
+      "sudo mv index.html /var/www/html/"
+    ]
+  }
+
+  tags = {
+    Name = "Webserver httpd"
+  }
+}
+
+ 
+4- Other files
+
+    The security_group.tf file
+
+        this script is used to create the VPC and security group for opening ports on our web server.
+
+        In this file, we use the variables.tf file to retrieve the ports for our security group in a dynamic block.
+
+security_group.tf file
+# create default vpc if one does not exit
+resource "aws_default_vpc" "default_vpc" {
+}
+
+# use data source to get all avalablility zones in region
+data "aws_availability_zones" "available_zones" {}
+
+# create default subnet if one does not exit
+resource "aws_default_subnet" "default_az1" {
+  availability_zone = data.aws_availability_zones.available_zones.names[0]
+
+  tags = {
+    Name = "utrains default subnet"
+  }
+}
+
+# create security group for the ec2 instance
+resource "aws_security_group" "webserver_security_group" {
+  name        = "sg"
+  description = "allow access on ports 80 and 22"
+  vpc_id      = aws_default_vpc.default_vpc.id
+
+  # allow access on these port 80 and 22 for Server using Dynamic blocks. 
+  ingress {
+    description = "http proxy access"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # allow access on port 22 ssh connection
+  ingress {
+    description = "ssh access"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "Security group"
+  }
+}
+
+    aws_key_pair_generate.tf file
+
+        this file is used to generate an SSH key to connect to the server
+
+    aws_key_pair_generate.tf file
+
+# Generates a secure private key and encodes it as PEM
+resource "tls_private_key" "webserver_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+# Create the Key Pair
+resource "aws_key_pair" "webserver_key" {
+  key_name   = "webserver_key_pair"  
+  public_key = tls_private_key.webserver_key.public_key_openssh
+}
+# Save file
+resource "local_file" "ssh_key" {
+  filename = "${aws_key_pair.webserver_key.key_name}.pem"
+  content  = tls_private_key.webserver_key.private_key_pem
+  file_permission = "400"
+}
+5- The list of commands for testing the code :
+
+    terraform init
+
+    terraform plan
+
+    terraform apply
+
+    copy the output webserver_url in my case something like: ec2-34-236-237-56.compute-1.amazonaws.com then paste it into your browser. Then you can see that the message in our script file is displayed.
+
+ 
+
+    terraform destroy
+
+ 
+
+
+
+
+https://dataservicegroup.atlassian.net/wiki/x/C4C6iQ

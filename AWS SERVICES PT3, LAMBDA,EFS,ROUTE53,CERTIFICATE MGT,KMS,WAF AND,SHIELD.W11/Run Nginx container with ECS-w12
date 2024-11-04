@@ -1,0 +1,68 @@
+Run Nginx container with ECS
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Jul 20, 2024 by Estephe Kana
+3 min read
+
+Let's go ahead and run an NGINX container using   ECS
+
+    Log into your AWS account and go to the ECS service.
+
+    In the ECS service, click on Create Cluster.
+
+    On the form, Enter the cluster name 
+
+    Now scroll down to the bottom and click on Create.
+
+    Now wait for the cluster to be created. once the creation is done, you should get the output below 
+
+    Now the Next thing is to create a task definition to run our Nginx image.
+
+    On the side bar click on Task definitions
+
+    On the page that shows up, click on Create new task definition
+
+    On the page that shows up, enter the task name and the image name then the URI of the image.
+
+Note that if your image is on ECR, enter the image URL, not just the image name.
+
+    Now scroll down and click on Create after reviewing.
+
+ 
+image-20240319-173043.png
+
+    Once the task is created, we will need to run it.
+
+    At the top of the page, click on  Deploy
+
+    Now click on Create Service
+
+    On the page that shows up, select the Cluster that you created
+
+Then scroll down to the Service Name and enter the service name
+
+    Leave the rest unchanged then scroll down and click Create
+
+    Once the service is created, scroll down and click  on Tasks
+
+    Then select the task you created (2)
+
+    On the page that shows up, click on Open address
+
+Note: Open the Networking tab of your task To ensure that port 80 is open in the security group, edit the inbound rule and allow traffic on port 80. By doing so, you enable incoming HTTP traffic.
+
+It would be best if you got the output below
+
+Congratulations you Deployed your first image on ECS, you can now go ahead and continue with the slide.
+
+Note: Always remember to delete the services you created.
+
+
+
+https://dataservicegroup.atlassian.net/wiki/x/AQDggg
+
+aws ecr documentation website   https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html
+  aws ecs documentation website       https://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html                        
+   aws sns documentation website  https://docs.aws.amazon.com/sns/latest/dg/welcome.html
+  aws Simple Queue Service sqs documentation website  https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html
+  aws simple email service ses documentation website https://docs.aws.amazon.com/ses/latest/dg/Welcome.html

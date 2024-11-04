@@ -1,0 +1,231 @@
+Pipeline with AWS CodePipeline, Code Build and CodeDeploy
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Jul 26, 2024 by Estephe Kana
+7 min read
+
+In this project, we will create a pipeline to update and deploy the single container application we deployed to ECS. We are going to use AWS Codeipeline, AWS CodeBuild and finally CodeDeploy.
+
+Prerequisite
+
+    Make sure you have gone through the project to deploy a single container application to ECS (link here)
+
+1- Create a project repository
+
+open git bash on  VS Code and clone the project from GitHub
+git clone https://github.com/utrains/static-app.git
+
+now move into the static app repository
+cd static-app
+
+now run the command below:
+rm -rf .git
+
+Now go to your GitHub account and create a new repository
+
+create repository
+
+On your GitHub account, click on new
+
+Enter a repository name of your choice and click on Create.
+
+Once the repository is created, go to VS Code and run the commands below (make sure you are in the static app directory which you cloned above)
+git init
+git add .
+
+when you created the repository, some commands were given to push to the repository. copy the commands circle below and run them.
+
+You should get the output below 
+
+You can now go to your repository and verify if the files were successfully pushed.
+
+ 
+
+Now, let's head over to our AWS account and create a code pipeline to deploy and update our application.
+2- Create a code pipeline 
+
+Sign in to the AWS Management Console and open the AWS CodePipeline console. Choose Create pipeline.
+
+Enter the name of your pipeline, in my case I used WepApplication.
+
+Allow the rest as Default and click on next
+
+ 
+
+In the next step, we will add the source of our code, which in our case is GitHub.
+2a- Adding the Source Stage
+
+Select GitHub Version 2 from the source provider.
+
+ 
+
+Click Connect to GitHub to proceed Next.
+
+Write the name of the connection, then click on Connect to GitHub.
+
+ 
+
+Now click on Authorize AWS connector for GitHub.
+
+ 
+
+On the screen that shows up, click on Install a new app.
+Screenshot from 2024-07-26 09-43-28.png
+
+  
+
+On the page that shows up, select the GitHub you will want to connect to.
+
+ 
+
+You can choose to link all your repositories or just certain repositories. Here I chose to link all my repositories and then click on install.
+
+After installation, on the next page, click on Connect.
+
+Once the connection is completed, you will get a connection successfully on your pipeline widget.
+
+Now select the GitHub repository which you created and the branch.
+
+Scroll down in the Trigger bloc, choose Specify filter as trigger type
+
+Choose Push for Event type and Branch for Filter type
+
+Then for Branches, type main in the text field for Include and leave the rest as default.
+Screenshot from 2024-03-26 10-58-14-20240326-095814.png
+
+Now scroll down and click on next.
+
+We have connected our GitHub repository, let's go ahead and add a build stage using codeBuild.
+
+Note: You may notice some changes in the interface but don't worry, the process remains the same.
+2b- Add build step
+
+Under Build provider, select AWS CodeBuild then select your region in your case it should likely be us-east-1
+
+Now click on Create Project.
+
+On the page that shows up, enter the project name. You can leave the description since it's optional.
+image-20240726-085936.png
+
+Now scroll down to Environment bloc, select Managed Image
+
+ On the operating system,  choose Amazon Linux, then select Standard as runtime and standard:2 for the image.
+image-20240726-090225.png
+
+Enter a role name of your choice, in my case I choose: codebuild-Webappli-service-role
+
+Also, take note of the role name, you will need it in the later part of the project.
+
+Scroll down and click on Additional configuration
+
+Then on the additional settings, scroll down to Add Environmental Variable.
+
+Add the variables below.
+
+ Note that the Container name is the name you gave to the container when creating your task definition in the previous project. To get the account ID, click on your name at the top right, then copy the account.
+
+Also, the IMAGE_REPO_NAME and IMAGE_TAG are the ECR repository name and the image tag respectively.
+
+Now scroll down to buildspec.
+
+Enter the build spec shown below.
+
+Once you are done, scroll down and click continue to code pipeline.
+
+Once the creation is done, scroll down and click on Next.
+
+On the next page, we will configure the deployment.
+2c- Configure deployment 
+
+Select ECS for the deployment provider. Then select your region, cluster name and service name.
+
+Under the image definition section, enter imagedefinitions.json
+
+ 
+
+Now click on Next.
+
+Before you click on create, we will need to modify the role used by our codebuild to add AmazonEC2ContainerRegistryFullAccess.
+
+Open a new tab and go to the AWS  IAM console.
+
+Click on roles.
+
+Search for the role name we entered for the pipeline,  which in my case is (codebuild-Webappli-service-role)
+
+ 
+
+click on the role.
+
+On the page that shows up, click on Add permissions.
+
+Then on attach policies
+
+Now search for AmazonEC2ContainerRegistryFullAccess
+
+select the policy, then click on Add permissions.
+
+You can now go back to the previous tab where you were creating the pipeline and click on  Create pipeline
+
+Once the pipeline is created, you will have the screen below
+
+Now you will need to wait for the pipeline to execute completely.
+
+Once the execution is completed, you will get all stages green.
+
+In this stage, we will test our pipeline by updating our code and see if the changes will be reflected on our website.
+
+ 
+3- Test pipeline.
+
+Go to the application you forked to your repository in  1 
+
+copy the application link and open Visual Studio Code
+
+on Visual Studio Code  terminal, move to the home directory
+cd ~
+
+now clone your code
+git clone the-link-you-copied
+
+now move into the static-app directory
+cd static-app
+
+now open the index.html file
+code index.html
+
+Then modify line 92 and add welcome to the automated utrains website  
+
+Now on your terminal, commit and push the code
+git add .
+git commit -m "added a welcome message"
+git push
+
+once the push is done, head over to your pipeline, and you will see that it has been started.
+
+Now take a coffee and wait for the application to be deployed completely
+
+Once the deployment is done, 
+
+Head over to ECS and select the cluster you created in the previous project
+
+then scroll down and click on the service you created
+
+Then now click on View load balancer
+
+Once in the load balancer,
+
+copy the DNS address and paste it into the browser 
+
+You will notice the change we made.
+image-20240326-104035.png
+
+So this will reduce the stress of building applications and deploying them manually.
+
+If you successfully arrived here, congratulations on your big achievement. 
+
+Don’t forget to delete all the resources you created when you are done.
+
+
+
+https://dataservicegroup.atlassian.net/wiki/x/AYB3hQ

@@ -1,0 +1,224 @@
+Modules - EC2 - Terraform
+
+Owned by Suzie Fontang
+Last updated: Jul 20, 2024 by Estephe Kana
+5 min read
+About this lab
+
+    In this hands-on lab, we'll be writing a basic Terraform module (Local System Module) from scratch and then testing it out.
+
+    In this Lab, we'll create a local VPC module, pass an AWS region to this module, and then retrieve the subnet created through the module and the AMI ID to create an EC2 instance.
+
+1- Create the local module
+
+First, let’s create a directory for this lab in the devops directory on our local machine.
+
+Note: Please ensure that the "devops" folder exists. If it does not, kindly create the folder.
+cd ~
+cd devops
+mkdir terraform-module-practice
+cd terraform-module-practice
+
+The structure of our lab will be like the following
+terraform-module-pratice
+│   ├── terraform-ec2
+|       ├── modules 
+|       |   └── vpc-ami-id
+|       |       ├── main.tf
+|       |       ├── variables.tf
+|       |       └── outputs.tf
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
+
+    In this section, we will create a folder called terraform-ec2 in the terraform-module-practice directory
+
+    In the terraform-ec2 folder, we are going to create a subfolder called modules where we will put our module
+
+For this lab, we are creating only one module but for huge projects, you can have a lot of modules
+
+    In our case, we're going to create another folder ( /modules/vpc-ami-id) in which we'll create the terraform configuration files for our local VPC module
+
+    In our vpc-ami-id folder, we will create three files (main.tf, output.tf, variable.tf ) for our module.
+
+Let's use the terminal or our favourite code editor to put this into practice:
+1.1- Create the root and the VPC module folders
+The commands for creating the module are as follows:
+mkdir terraform-ec2
+cd terraform-ec2
+mkdir -p modules/vpc-ami-id
+cd modules/vpc-ami-id
+1.2- create the terraform module files
+a- The main.tf file
+
+In the vpc-ami-id folder, create a main.tf file with the content below:
+
+main.tf: it’s the file that creates the VPC, and then uses the AWS SSM public endpoint to get the AMI ID.
+provider "aws" {
+    region  = var.region
+}
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0.0"
+    }
+  }
+}
+
+resource "aws_vpc" "my-vpc" {
+  cidr_block = "10.0.0.0/16"
+}
+
+resource "aws_subnet" "my-subnet" {
+  vpc_id     = aws_vpc.my-vpc.id
+  cidr_block = "10.0.1.0/24"
+}
+
+// use SSM public endpoint to get AMI Params
+data "aws_ssm_parameter" "data-params" {
+  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+}
+b- The variables.tf file
+
+In the vpc-ami-id folder, create a variables.tf file with the content below:
+variable "region" {
+  type    = string
+  default = "us-east-1"
+}
+
+variable "version_provider" {
+  type    = string
+  default = "5.3.0"
+}
+c- The outputs.tf file
+
+    In the vpc-ami-id folder, create an outputs.tf file with the contents below:
+
+The file outputs.tf will allow us to expose the values we want to access from our root module (in our different terraform projects when we use this module).
+output "subnet_id" {
+  value = aws_subnet.my-subnet.id
+}
+
+output "ami_id" {
+  value = data.aws_ssm_parameter.data-params.value
+}
+
+ 
+2- Create .tf files for our main terraform project
+
+Now that we have defined all the terraform configuration files for our module, let’s create the .tf files for the main project
+
+First, switch back to the terraform-ec2 folder
+cd ../..
+2.1 - Create the main.tf file
+
+Create the main.tf file in this folder ( terraform_ec2 ). This file will contain our main terraform code.
+
+In this file, we will also call the module we created earlier.
+main.tf file
+provider "aws" {
+  region = var.region
+}
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0.0"
+    }
+  }
+}
+
+// Loading our module : please put in the source attribute your own dir to your module create earlier.
+module "vpc" {
+  source = "./modules/vpc-ami-id"
+  //source = "/home/hermann90/modules/vpc-ami-id"
+  region = var.region
+}
+
+// Using the output for our module in the main or root code
+resource "aws_instance" "my-instance" {
+  ami           = module.vpc.ami_id
+  subnet_id     = module.vpc.subnet_id
+  instance_type = "t2.micro"
+  tags = {
+    Name = "ec2-custom-module"
+  }
+}
+
+ 
+2.2- Create the variables.tf file
+
+    In the terraform_ec2 folder, create a variables.tf file with the contents below:
+
+variables.tf file
+variable "region" {
+  type    = string
+  default = "us-east-1"
+}
+2.3- Create the outputs.tf file
+
+    In the terraform-ec2 folder, create an outputs.tf file with the contents below:
+
+This file will allow us to expose the values we want to display in our terminal when the terraform apply command ends successfully
+output.tf  file
+output "PrivateIP" {
+  description = "Private IP of EC2 instance"
+  value       = aws_instance.my-instance.private_ip
+}
+3- Deploy Your Code and Test Out Your Module
+
+Being in the terraform_ec2 directory, which contains all our code, perform the following actions:
+
+    Format the code in all of your files using the command:
+
+terraform fmt -recursive
+
+ 
+
+    Initialize the Terraform configuration to fetch any required providers and get the code being referenced in the module block with the command:
+
+terraform init
+
+    Validate the code using the command:
+
+terraform validate
+
+    Review the action plan that will be performed when you deploy the code
+
+terraform plan
+
+    Deploy the code with the command:
+
+terraform apply --auto-approve
+
+    Open the AWS console then see our instance
+
+    View the resources that were created
+
+terraform state list
+Clean up
+
+Tear down the infrastructure when you are done working to avoid further charges in the cloud
+terraform destroy
+
+ 
+List of commands for testing our module
+terraform fmt -recursive
+terraform init
+terraform validate
+terraform plan
+terraform apply --auto-approve
+terraform state list
+terraform destroy
+Bonus: source codes
+
+    Find the source codes in the GitHub repository below. Source Code from GitHub
+
+
+https://github.com/utrains/Terraform-associate-class/tree/main/terraform_ec2  # GITHUB LINK
+
+
+https://dataservicegroup.atlassian.net/wiki/x/GQC7iQ

@@ -1,0 +1,168 @@
+Getting started with Amazon ECR
+
+Owned by Suzie Fontang
+Last updated: Jul 20, 2024 by Estephe Kana
+4 min read
+
+In this demo, we will learn how to create a first repository in ECR, and build and push a docker image in the repository.
+Prerequisites:
+
+Before starting you must make sure you have access to an IAM user who has admin access to your AWS account
+Create the ECR repository
+
+To create your first  repository in ECR, log in to your AWS account and click on Services
+
+    In the Containers Domain, choose Elastic Container Registry (ECR)
+
+ 
+
+    Then click on Create repository
+
+    In the Visibility settings, select Private, and enter the repository name 
+
+    Allow other parameters as default, scroll down and click on Create repository
+
+    To view the repository you created, click on its name in the list of repositories
+
+    For now, our repository is still empty. 
+
+Create and configure the EC2 instance 
+
+Now, let’s launch an EC2 instance that we will use to build and push our docker image to ECR.
+
+1- Launch EC2 instance
+
+    In the EC2 console, launch an instance with an Amazon Linux 2 AMI 
+
+ 
+
+    Also make sure you create a key pair (or use one you have access to, to connect remotely to the instance using Visual Studio code
+
+    Connect remotely to your instance from your Visual Studio code
+
+2- Install AWS CLI
+
+Follow the commands to install the AWS CLI on the EC2 instance:
+
+    Download the necessary package
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+    Unzip the package downloaded
+
+unzip awscliv2.zip
+
+    Install the program
+
+sudo ./aws/install
+
+    Verify
+
+aws --version
+
+This will display a message like:
+
+aws-cli/2.13.28 Python/3.11.6 Linux/6.1.56-82.125.amzn2023.x86_64 exe/x86_64.amzn.2023 prompt/off
+
+3- Create Access credentials to configure the AWS CLI
+
+    In your AWS console, click on your Profile name, then click on Security Credentials
+
+ 
+
+    Now scroll down and click on Create  access key
+
+    Check the box Command Line Interface (CLI), scroll down, and acknowledge the recommendation, then click on Next
+
+    Give any description tag value and click on Create access key
+
+    Copy the created Access and the secret key and store it somewhere handy
+
+    You can also click on Download the CSV file
+
+NB: You cannot have more than 2 active access keys. If you already have 2, then delete one to be able to create a new access key.
+
+    Now open your Visual Studio Code, and run the command: 
+
+aws configure
+
+    AWS Access Key ID [None]: Paste the Access key you copied earlier
+
+    AWS Secret Access Key [None]: Paste the secret key you copied earlier
+
+    Default region name [None]: us-east-1 (if you have set N. Virginia as your AWS region)
+
+    Default output format [None]: press enter to select the default format
+
+4- Install Docker on the instance
+
+    Follow the steps below to install docker on your server: Click here
+
+sudo yum update -y
+sudo amazon-linux-extras install docker -y
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo systemctl status docker
+sudo usermod -a -G docker ec2-user
+
+    Log out and log back in again to pick up the new docker group permissions. Run the command: 
+
+logout
+
+    Now, reconnect to your instance (you can recall the previous command you used to connect)
+    Your new SSH session will have the appropriate docker group permissions.
+
+    Verify that the ec2-user can run Docker commands without sudo.
+
+docker info
+
+ 
+
+5- Create the Dockerfile in the home directory
+cd ~
+vi Dockerfile
+
+    Paste the following content then save and quit
+
+FROM httpd:2.4
+LABEL "image-author"="student"
+RUN apt-get update
+COPY ./index.html /usr/local/apache2/htdocs
+
+    Now, create the index.html file
+
+vi index.html
+
+    Paste the following content then save and quit
+
+<h1>This is my Docker image of httpd. This will be pushed to AWS ECR</h1>
+
+6- Build and push the docker image in the ECR repository
+
+In the ECR dashboard, click on the name of the repository we previously created (in my case my_docker_repo)
+
+Now, click on View push commands to get the steps you need to follow to push an image into the repository
+
+    Run the four commands that are specified successively on your EC2 instance to authenticate, build and push the image to your ECR repository
+
+    When that is done, refresh your page to verify that the image was pushed successfully. You can click on the image tag to view the image details
+
+You have successfully created your first repository in ECR and have successfully pushed a docker image to the repo.
+
+You can easily pull that image anytime from the ECR repo and run a container with it locally
+docker run -itd -p 80:80 076892551558.dkr.ecr.us-east-2.amazonaws.com/my_docker_repo:latest
+
+make sure your EC2 instance allows HTTP traffic (inbound rule) on port 80
+
+You can then open your instance IP:80 in the browser to check the content of the container.
+Clean up
+
+It is a good practice to always destroy resources you create in AWS to avoid further charges.
+
+    Delete the repository
+
+    Terminate the EC2 instance
+
+
+
+    https://dataservicegroup.atlassian.net/wiki/x/DQBqhQ

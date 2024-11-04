@@ -1,0 +1,390 @@
+Build a User registration API with API Gateway, Lambda and DynamoDB
+
+Owned by pamela azanfouet (Unlicensed)
+Last updated: Sep 27, 2024 by Estephe Kana
+11 min read
+
+In this tutorial, you will learn how to use these different services: Lambda, DynamoDB, API gateway, IAM, S3 bucket, Route53, Certificate manager, and Cloudfront. Step by step you will learn how to:
+
+    Create a database
+
+    Create a Lambda function
+
+    Write CRUD lambda code with python
+
+    Configure API gateway
+
+    Host the client application on the S3 bucket
+
+Create a DynamoDB table
+
+You use a DynamoDB table to store data for your APP. Each item has a unique ID, which we use as the partition key for the table.
+
+To create a DynamoDB table kindly follow these steps:
+
+    Open the DynamoDB console at (link)
+
+    Choose Create table.
+
+    For the Table name, enter userserverless (take note of the spelling)  you can still use a name of your choice but you will have to modify it in your lambda function.
+
+    For the Partition key, enter id ( note: the id should be in lowercase because that’s what the developer used in his code as identifier)  and allow the data type as a string as it is presented in Figure 1.
+
+    Choose Create table. 
+
+Figure 1: Creation process of a table in DynamoDB
+
+We are done creating our database. The next thing to do is to create a lambda function but before that let's create an IAM role so that our lambda function will use to access the database.
+Setting up IAM role 
+
+    Login into your AWS management console and click on Services on the top navbar. 
+
+    From the Services drop-down, scroll down and click on Security, Identity and compliance.  
+
+    On the sidebar scroll down and click on IAM.
+
+    On the page that shows up click on Roles on the sidebar as shown in Figure 2.
+
+Figure 2: Roles
+
+    Click on Create role
+
+    On the trusted entity type, select AWS service, 
+
+    Scroll down and select Lambda as Use case
+
+    Click on Next. You will be taken to a page to policies for our IAM role.
+
+We are going to attach two policies:
+CloudWatchFullAccess for the API request
+AmazonDynamoDBFullAccess for database access 
+
+AWS has so many policies, the best way is to search on the search bar above the table as in Figure 3
+Figure 3:  Policies search bar
+
+    After selecting the two policies click on next.
+
+    Enter the role name (in our case it is serverlessapi-role)
+
+    Scroll and click on create role.
+
+We are done creating the IAM role, we will create a Lambda function for the backend of your API. This Lambda function creates, reads, updates, and deletes items from DynamoDB. The function uses events from API Gateway to determine how to interact with DynamoDB.
+Creating the Lambda Function
+
+    Sign in to the Lambda console on this link (link). 
+
+    Click on Create a function. 
+
+    For the Function name, enter serverless-lambda or a name of your choice just try to be consistent when naming.
+
+    On the runtime select python 3.10 or the latest python you have. 
+
+    Under Permissions click on Change default execution role.
+
+    Select Use an existing role.
+
+    For the Role name, enter the role you created earlier and click on create function. Figure 4 shows the complete setup
+
+Figure 4: The creation of a Lambda function
+
+    Now click on Create function. 
+
+You will be taken to the page containing the AWS lambda build-in editor as shown in Figure 5.
+Figure 5:  Lambda function home page
+
+    Now click on Configuration. At the top bar of the table as it is highlighted in Figure 5, at the left click on General configuration and click on Edit
+
+    Then, change the time to 1 min and the memory to 500MB, then click on Save
+
+Figure 6: Configuration of the lambda function
+
+    Now download the lambda code from Github on this  (link).
+
+    Unzip the downloaded folder.
+
+    Copy the code in the lambda_function.py using CTRL+C
+
+    Click on Code and Go to your lambda function clear the code inside and paste the copied code. Use CTRL +V to paste.
+
+Figure 7: Creation of the first lambda function
+
+    Go back to the folder you downloaded
+
+    Copy the code in the custom_encoder.py.
+
+    Go to the AWS lambda function, right-click on the folder on the sidebar, and click on New File. as presented in Figure 8
+
+Figure 8: New file
+
+    Enter the file name as custom_encoder.py then paste the code you copied using CTRL +V.
+
+    Click on Deploy to deploy the code. (Look at Figure 7) 
+
+Note:  If you used a different dynamodb table name, go to your lambda function and modify the lambda_function.py. change the  dynamodbTableName value to that of your dynamodb table. Look at Figure 9.
+Figure 9: Table Definition
+
+We are done creating the lambda function and writing the CRUD code. Next, we will create and configure the API gateway.
+Configuring the API GATEWAY
+
+    Go to Link and click Click on Create API. 
+
+    Scroll down to REST API and click on Build
+
+Figure 10: the creation of the API Gateway
+
+    Under API details, select New API. 
+
+    Enter the name of the API and click on Create API (we called our API application-api)
+
+Now let's create the various endpoints (resources). We will create:
+
+The health resource to check the application’s health, 
+
+The user resource for all data on a single user 
+
+And the users to query all users.
+
+To create the endpoints(Resources).
+
+    At the top click on Create Resource as shown in Figure 11
+
+Figure 11: Create a Resource
+
+ On the New child resource box, enter the name of the endpoint and select CORS then click Create resource  as in Figure 12:
+Figure 12: Creation of a resource
+
+    Do the same for the user and users endpoints (resource). Your API should look like this in Figure 13
+
+Figure 13: All the resources have been created
+
+After creating all the resources, the next is to create the methods for each resource.
+
+The health will have just a GET method
+
+The user resource will have GET, PUT, POST, and DELETE methods.
+
+The users resource will have just a GET method. 
+
+To create a method: 
+
+    Click on the concerned resource: Let’s click on the resource  health  
+
+    Then go to Methods and click Create Method as presented in Figure 13
+
+    In Method type select the method you want to create and choose Lambda function as integration type.
+
+    Enable the lambda proxy integration  
+
+    Choose the ARN of the lambda function you created earlier. 
+
+    Make sure that the Default timeout is enabled also And click on Create method
+
+image-20240821-021753.png
+Figure 14: The method selection and characteristics
+
+    After creating the method, go ahead and repeat the procedure to create the methods for the other resources.
+
+    When done creating the methods: click on the user resource and then, click on Enable CORS. ( also do the same for the users resource)
+
+Figure 15: Enable CORS
+
+    On the popup click Fill form as shown in Figure 16: 
+
+    Make sure you select DEFAULT 5XX
+
+    For Access-Control-Allow-Origin enter ‘*’ to allow all origins and click on Save.
+
+Figure 16: Enable Cors on user resource
+
+    When done an important point is to deploy the API.
+
+    Click on the root and after that, click on Deploy API as it is presented in Figure 17
+
+Figure 17: Deploy API
+
+Note:  Always deploy your API whenever you make changes to it.
+
+    On the form that pops up select New Stage as the Stage
+
+Figure 18: Definition of the stage
+
+    Fill in the Stage name information and click on Deploy (We called our stage register)
+
+    You will be taken to the page containing the stages
+
+    Please take note of the API root (URL)  because we will need it in our javascript app 
+
+Figure 19:  the API root URL to save
+
+We are done creating and configuring our API gateway. Let now host our javascript application on an S3 bucket to consume the various APIs 
+Hosting javascript application on S3 bucket
+1- Create an S3 bucket
+
+To create a new S3 bucket look at the previous tutorial on how to create an S3 bucket. Link to the tutorial
+2- Upload app files to S3 bucket
+
+    Download the code from here and unzip 
+
+    Open the index.js file and change the value of your api_root to that of your API (remember you were asked to take note of the URL after creating your API)
+
+    Copy and paste in the double quotes. ( please add the / at the end as shown in Figure 20 )
+
+Figure 20:  The api_root value
+
+    Login into your AWS management console and click on Services on the top navbar. 
+
+    From the Services drop-down, select S3 from the Storage section. 
+
+    This should display the S3 dashboard.
+
+Figure 21: the S3 dashboard
+
+    Click on the s3 bucket you created; in our case the name is angularapplication1
+
+    On the page displayed click on Upload
+
+Figure 22: Upload files into the S3
+
+Select all the files on the unzipped folder you downloaded, drag and drop them to upload, or click on Add files.
+Figure 23: Adding files S3
+
+    Click on Add files, browse to the unzipped folder you downloaded from Github and select all the files inside.
+
+    To select all the files, press the CTRL key and click on all the files then click on open.
+
+Figure 24: Files to upload the S3 bucket
+
+    After the necessary files have been added, scroll down and click on Upload
+
+Figure 25: Uploading files last step
+
+The uploading should be done in a few minutes depending on your network and content size. Also, please do not close the tab while the upload process is going on.
+Once all the files are uploaded you will see them displayed in the s3 bucket as in Figure 26.
+
+ 
+image-20240812-174117.png
+Figure 26: Files successfully uploaded
+
+We have uploaded the static files of our website to the Amazon S3 we created, Let’s now make the files public so that anyone can access them with a link and also set the IAM policies.
+3- Setting public access to files
+
+    On the S3 console click on the S3 you created
+
+    Open the permissions tab as in Figure 27
+
+Figure 27: Click and open the permission tab
+
+    Scroll down to  block public access and click on EDIT
+
+    Untick the box Block all public access and click on Save changes
+
+    Enter Confirm in the text field that shows up and click on Confirm
+
+    Your permission tab should look like this in Figure 28
+
+image-20240821-031233.png
+Figure 28: Allowing all public access
+
+    Scroll down to Bucket policy and click on Edit
+
+    Delete whatever  is inside the box
+
+    Copy the code below and paste but replace bucket-name with the name of your S3  then scroll down and click on Save changes
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::bucket-name/*"
+        }
+    ]
+}
+
+The public access and the IAM policies have been configured. Let's configure our S3 so that we can access the static web pages.
+
+Note: You need to specify the default page and error page for your website.
+
+    From the S3 dashboard, click on the name of the bucket, then click on the Properties tab.
+
+    Scroll down to the Static website hosting section and click on its Edit button.
+
+    Select Enable for Static website hosting.
+
+    Also, select Host a static website for the Hosting type.
+
+    Enter the file for your Index document and Error document. The Error document is optional. We used index.html for both the Index document and the Error document.
+
+    Scroll down and click on Save Changes.
+
+Figure 29: Configuring The web Hosting on the S3 bucket
+
+ 
+
+After saving, scroll down and click on the bucket website endpoint, it will display your website.
+Figure 30: Click on the link to access the web application
+
+This is how our website should look in Figure 31.
+image-20240422-155434.png
+Figure 31: The Final result
+
+Let's create a new product and verify if it's in the Dynamodb.
+Testing website
+
+    Click on Create and fill out the form
+
+    Then click ok
+
+    The new user will be created in the database look at Figure 33.
+
+ 
+Screenshot from 2024-04-22 16-56-48.png
+Figure 32: user Creation
+
+ 
+
+    The image shows the newly created user displayed on the website. 
+
+ 
+Screenshot from 2024-04-22 16-55-46.png
+Figure 33: A user was successfully added
+
+Now go to dynamodb and click on explore items on the side menu, then choose the dynamoDB that you created, you should see the items created in the database.
+image-20240422-160253.png
+Figure 34: Exploring items in DynamoDB
+
+You can see clearly that the S3 bucket link is long and not presentable so you can't give it to a client. You will have to add a custom domain name and https using the certificate manager. The next thing to do is configure Cloudfront, Certificate Manager, route 53, and a custom domain name. Here is the link to the tutorial
+Read more
+
+Always read the AWS documentation in case you are blocked on a particular error or just to know more about AWS services. Below are the links to the documentation of all the services used in this tutorial. 
+
+service
+	
+
+Documentation
+
+API GATEWAY
+	
+
+ 
+
+LAMBDA
+	
+
+ 
+
+S3
+	
+
+ 
+
+DynamoDb
+	
+
+ 
+
+ 
+https://dataservicegroup.atlassian.net/wiki/x/Z4CjhQ

@@ -1,0 +1,376 @@
+
+AWS PROJECT 4: Configure Cloudwatch and SNS notifications
+August 12, 2024
+Lesson Progress
+0% Complete
+MARCH WE 2024 MARCH 2024 W14: AWS Projects AWS PROJECT 4: Configure Cloudwatch and SNS notifications
+In Progress
+Configuring CloudWatch and SNS Notifications for Project 3 or any other project
+Objective:
+
+In this project, the goal is to monitor a user registration application (or any other infrastructure) using Amazon CloudWatch and set up notifications via Amazon SNS (Simple Notification Service). This is crucial to ensure that any issues, such as errors or high traffic, are quickly identified and addressed.
+Background:
+
+Amazon CloudWatch Logs allows you to monitor, store, and access log files from various sources, including Amazon EC2, AWS CloudTrail, Route 53, and more. It provides a centralized, scalable service where you can view, search, and filter logs for specific error codes or patterns. CloudWatch Logs can group and sort log events by time or other dimensions, and you can visualize this data on dashboards.
+Problem:
+
+After developing the user registration app, it became evident that monitoring was necessary to detect errors and manage high traffic efficiently. Your task is to configure logging for various services (API Gateway, DynamoDB, Lambda, and S3) and set up notifications for specific conditions.
+Monitoring and Notification Requirements:
+
+    API Gateway, DynamoDB, Lambda, and S3 Logging: Set up logging for these services to track and monitor their performance and identify any issues.
+
+    Notifications Setup:
+        Notify if more than 50 users invoke the Lambda function within 1 minute.
+        Notify if the Lambda function encounters any errors.
+        Notify if the API Gateway is called more than 100 times within 1 minute.
+        Notify if the Lambda function experiences slow load times.
+        Notify if the ConsumedWriteCapacityUnits of DynamoDB exceeds 10 within 1 minute.
+        Notify in case of any 5xx or 4xx errors on the API Gateway.
+
+    Notifications Delivery: All notifications should be sent via email using AWS SNS.
+
+AWS Services Used:
+
+    AWS CloudWatch: Used for monitoring logs, setting up alarms, and visualizing data.
+
+    AWS SNS: Used for sending email notifications based on CloudWatch alarms.
+
+Prerequisite:
+
+Before starting this project, ensure that you have completed Project 3. This will provide the foundational knowledge necessary to configure CloudWatch and SNS for monitoring and notifications.
+Project Documentation:
+
+For detailed instructions and further documentation, refer to the Project Documentation.
+
+
+
+
+
+
+Configure CloudWatch logs for  API gateway, Lambda function, S3, DynamoDB, and setup SNS notifications.
+
+Owned by pamela azanfouet (Unlicensed)
+Last updated: Sep 05, 2024 by Estephe Kana
+9 min read
+
+Prerequisite:  
+
+This project is about setting up cloud monitoring for Build user registration app using API gateway,Lambda,dynamodb , so to go through this project successfully you must have completed the project 3.
+
+In this tutorial, you will learn to use 3 services:  Cloudwatch, IAM, and SNS. this project will focus on these topics!
+
+    Configure Cloudwatch logs for the API gateway
+
+    Configure Cloudwatch logs for lambda
+
+    Configure Cloudwatch logs for the S3 bucket
+
+    Configure Cloudwatch logs for Dynamodb
+
+    Set Alarms and configure SNS notifications 
+
+1- Configure Cloudwatch logs for API gateway
+Step1: Create an IAM role for logging into CloudWatch
+
+In the AWS Identity and Access Management (IAM) console, in the left navigation pane, 
+
+    choose Roles.
+
+    On the Roles pane, choose Create role.
+
+    On the Create role page, do the following:
+
+    For Trusted entity type, choose AWS Service.
+
+    For use case, choose API Gateway.
+
+    Choose the API Gateway radio button.
+
+    Choose Next.
+
+    Under Permissions Policies, note that the AWS-managed policy AmazonAPIGatewayPushToCloudWatchLogs is selected by default. The policy has all the required permissions.
+
+    Choose Next.
+
+    Enter Name, review and create, do the following:
+
+    For Role name, enter a meaningful name for the role.
+    (Optional) For Role description, edit the description to your preferences.
+    (Optional) Add tags.
+
+    Choose Create role.
+
+    On the Roles pane, in the search bar, enter the name of the role that you created. Then, choose the role from the search results.
+
+    On the Summary pane, copy the Role ARN. You'll need this Amazon Resource Name (ARN) in the next section.
+
+Step 2: Add the IAM role in the API Gateway console
+
+    In the API Gateway console, on the APIs pane, choose the name of an API that you created (project 3)
+
+    In the left navigation pane, at the bottom, below the Client Certificates section, choose Settings.
+
+    Under Settings, for CloudWatch log role ARN, click on Edit and paste the IAM role ARN that you copied.
+
+    Click Save changes.
+
+Note: The console doesn't confirm that the ARN is saved.
+Step 3: Turn on logging for your API and stage
+
+    In the API Gateway console, click on the name for your API, and then on the Stages in the left menu.
+
+    On the Logs/Tracing tab click on Edit.
+
+    On the Logs and tracing settings under CloudWatch logs do the following to turn on execution logging (choose the option:  Errors and info logs):
+
+        If you select "Errors and info logs", execution logs will be generated for all events, including both errors and informational logs. This option provides a comprehensive view of your API's execution.
+
+        On the other hand, if you choose "Errors only", execution logs will only be generated for requests to your API that result in an error.
+
+    Enable the Detailed metrics check box.
+
+    Enable Custom access Logging .
+
+        For Access Log Destination ARN, enter the ARN of a CloudWatch log group or an Amazon Kinesis Data (if you don’t have one yet, see below how to create a log group then get the ARN)
+
+        For Log Format enter the following value. 
+
+{ "requestId":"$context.requestId", "extendedRequestId":"$context.extendedRequestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod", "resourcePath":"$context.resourcePath","status":"$context.status", "protocol":"$context.protocol" }
+
+    Choose Save Changes.
+
+Note: The console doesn't confirm that settings are saved.
+
+    You are surely lost on how to get your  Destination ARN  follow the steps below to create one.
+
+        Login to AWS and go to Cloudwatch service.
+
+        On the left bar under logs,  click on log groups
+
+        Click on Create log group
+
+        Enter the name of the log group without spacing then click on Create.
+
+        Once the log group is created click on it and copy the ARN  without the “:*” and continue the above steps.
+
+        This log group will store your logs for the API gateway.
+
+Step 4: Test your logging setup
+
+    Navigate to your website and create a new user (that is on Project 3).
+
+    In the CloudWatch console, in the left navigation pane, under Logs, choose Log Groups.
+
+    In the list of Log Groups, choose the log group of the API that you're debugging.
+
+    For REST APIs, the log group's name is in the following format: 
+
+API-Gateway-Execution-Logs_apiId/stageName. Where in our case the stage name was registered.
+
+    Scroll down to the list of Log Streams, and choose the logs stream with the latest Last Event Time.
+
+    This selection will allow you to see messages with the execution or access details of your request.
+
+    If you refresh the website on Project 3, after a couple of minutes,  you can notice that there is a new entry in logs stream
+
+Note: The access logs are located in the log group whose ARN you specified when you turned on access logging. remember in our case, our destination ARN is the one that we created earlier. 
+
+We are done setting up the logs for the API Gateway, we will configure Cloudwatch logging for AWS Lambda.
+2- Configuring Cloudwatch logging for  AWS Lambda
+Step 1: Setting up IAM role
+
+    Login into your AWS management console and click on Services on the top navbar. From the Services drop-down, scroll down and click on Security,Identity and compliance.  On the sidebar scroll down and click on IAM.
+
+    On the page that shows up click on roles on the sidebar.
+
+    Click on the role we created in project 3 for serverless lambda access.
+
+Figure 1: Checking the role
+
+    In project 3 when creating the IAM role recall that we added CloudWatchFullAccess as a policy.
+
+    Click on the role and verify if you have CloudWatchFullAccess as a policy.
+
+Figure 2: Checking the policies
+Step 2: Add custom logs to the lambda
+
+    After verifying go to your lambda function and print logs in the lambda code using standard input and output.
+
+    Add import sys in the lambda function code, then
+
+    As shown in the image use sys.stdout.write(‘message’) (Make sure to use double quotes)
+
+    Add the highlighted lines to your lambda code in Figure 3:
+
+     And deploy.
+
+Figure 3: Updating the code
+
+Note: Pay attention: the lines of code added to our lambda function is to enable us know when a request is successful or fails for the getproduct and getproducts functions. You can further add system prints for the rest of the functions.
+Step 3: Test your logging setup
+
+    Navigate to your website and create a new user.
+
+    In the CloudWatch console, in the left navigation pane, under Logs, choose Log Groups.
+
+    In the list of Log Groups, choose the log group of the Lambda function.
+
+    For the lambda function, the log group is in the following format:
+
+ /aws/lambda/lambda-function-name
+
+    Looking at the most recent log event you will notice the log you just created indicating that the getproducts returned all users to the api gateway.
+
+Figure 4: log results
+3- Configuring Cloudwatch logging for  Dynamodb
+
+When creating your Dynamodb, Cloudwatch is auto-set; so to view the log metric do the following. 
+Step1: How to View CloudWatch Data for a Table in DynamoDB
+
+CloudWatch monitoring takes the data from DynamoDB and processes it into readable metrics.  Follow these steps to retrieve CloudWatch data for a table created in DynamoDB from the AWS management console.
+
+    Sign in at the Amazon Web Service Management console.
+
+    Then, open the CloudWatch console at CloudWatch
+
+    Click on ‘Metrics’ in the navigation window, then on All metrics.
+
+    choose ‘DynamoDB’ 
+
+    Select ‘Table Metrics’. Now you can explore the complete list of metrics for your table by scrolling down.
+
+4- Configuring Cloudwatch logging for  S3
+
+S3 comes with some basic analytics for bucket size and number of objects, which are free and calculated automatically. However, if you want to view more detailed analytics for S3 requests, you’ll need to turn on request metrics.
+How To Enable And View Request Metrics for an AWS S3 Bucket in CloudWatch?
+
+Note: To see request metrics, you’ll need to enable them for each bucket. These aren’t free like the default metrics — CloudWatch’s Paid Tier costs $0.30 per metric. Unfortunately, each S3 bucket can add up to 16 different request metrics, and they’re all on all the time. This brings the cost to $5 per bucket, potentially less depending on whether or not you use certain options.
+
+    Sign in at the Amazon Web Service Management console.
+
+    Then, open the S3 service and select the bucket you created in Project 3 in Buckets
+
+    To turn it on, head over to the Metrics tab for your bucket
+
+    You’ll see the default metrics, and at the bottom, there’s a “View Additional Charts” button click on it.
+
+    At the top of the table click on Request metrics
+
+Figure 5: Request metrics
+
+    Scroll down and click on Create Filter.
+
+    On the create filter form, enter the name of the filter and under scope select this filter applies to all objects in the bucket. Look at Figure 6.
+
+Figure 6: Creation of a filter
+
+    Click on Create filter
+
+    Once that’s done, request metrics will start being shipped to CloudWatch.
+
+Note:  It may take a little bit, so grab a coffee and come back to it!
+
+We are done setting up and enabling Cloudwatch for all the services, let's set alarms and configure SNS for all the various services used. 
+
+Here we will configure and test the alarms for the API GATEWAY and you will go ahead and similarly configure the rest. Configure Cloudwatch logs for Dynamodb
+5- Configure alarms for lambda function
+
+    To create an alarm for an existing Lambda function, go to the AWS Console and search for Cloudwatch in the search box at the top of the screen.
+
+    Click on "Alarms" in the left panel, then on All alarms.
+
+Note: If you have any existing alarms in your account under the selected region, you will see them here. 
+
+    To create a new alarm for an existing lambda function click on the "Create alarm" button.
+
+    You will get a screen to specify a metric and conditions. Click on the "Select metric" button as shown in Figure 7.
+
+Figure 7: select metric
+
+    Here you will find services with metrics available for them.
+
+    Scroll down and click on Lambda. Now you will see metrics available for Lambda functions. Click on By Function Name.
+
+    Select any one of the metrics available for the existing lambda functions. Here we will proceed with the "Invocations" metric. 
+
+    Click on the "Select metric" to proceed.
+
+    On the specified metric condition form, the select sum for statistics.
+
+    The sum will sum all invocations within 1 minute
+
+Figure 8:
+
+    Scroll down and select static for threshold type
+
+    Then select greater
+
+    Enter the maximum number of invocations: Let's Put 50
+
+    Click on Next
+
+Figure 9
+
+ 
+
+ 
+
+ 
+
+    On the configure actions
+
+    Select Create new topic
+
+    Enter a topic name of your choice
+
+    Enter your email for SNS notifications.
+
+    Then click on Create topic
+
+    Scroll down and click on Next
+
+Figure 10:
+
+    Fill in the alarm name
+
+    Enter the description and click on Next.
+
+Figure 11
+
+    Review your configurations and click on Create alarm.
+
+Note: To receive SNS notifications on the email you entered, login to your email account and confirm the email.
+Step 2: Test your testing alarms
+
+    Now navigate to your website and refresh continuously so that the lambda function can be invoked multiple times.
+
+    Once the sum of invocations is greater than 50 within one minute, an alarm will be sent to your email.
+
+
+Figure 12: An example of an alarm
+
+We just set up our first alarm. Go ahead and set up alarms for the rest of the services in a similar manner.  In case you have any difficulties feel free to submit a ticket.
+Read more 
+
+Always read the AWS documentation in case you are blocked on a particular error or just to know more about AWS services. Below are the links to the documentation of all the services used in this tutorial.
+
+ 
+
+service
+	
+
+Documentation
+
+Cloudwatch
+	
+
+https://docs.aws.amazon.com/cloudwatch/index.html 
+
+SNS notification documentation
+	
+
+https://docs.aws.amazon.com/sns/index.html 
+
+ 
+
+ https://dataservicegroup.atlassian.net/wiki/x/LwCshQ  #link to the above project

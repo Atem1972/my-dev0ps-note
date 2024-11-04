@@ -1,0 +1,91 @@
+Build and Push docker image to ECR
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Aug 26, 2024 by Estephe Kana
+3 min read
+
+ In this tutorial, we will build and push a docker image to our ECR repository.
+
+Note: in later projects, we will deploy this image On ECS.
+
+Prerequisite 
+
+    Have an AWS account
+
+    Have a GitHub account
+
+    Docker Lab (link to set up Lab)
+
+ 
+
+In this project, we will create a private ECR repository, and push our images to it.
+1- Create an ECR repository
+
+To create The ECR repository, go to ECR on AWS console.
+
+On the left menu of the ECR dashboard, click on Repositories, then on Create repository
+
+On the page that pops up, click enter the repository name. In my case, I entered dev as the name.
+Screenshot from 2024-07-22 23-17-31.png
+
+Now scroll down and click on create repository
+
+Please take note of the repository URI because we will need it later to push our images to the repository.
+
+We are done creating the repository, let's go ahead and build and push our image to the private ECR repository. 
+2- Push the Image to ECR
+2a- Clone the project from GitHub 
+
+Here we will clone the repository we will use for this project in our docker server.
+
+ssh into your docker server 
+
+then move to your home directory.
+cd ~
+
+Once in your home directory, you can now clone the project folder.
+git clone https://github.com/utrains/static-app.git
+
+Now, move into the repository directory
+cd static-app
+
+Now that we have cloned the project, let's go ahead and build our image.
+2b- Build a Docker image
+
+Run the command below to build  the docker image
+docker build -t webapp .
+
+once the image is done building, we can now go ahead and push to ECR
+2c- Push image to ECR.
+
+To push the image to ECR, our docker server (instance) needs access to our Account. To do this, you need to configure AWS CLI on  the instance (here is the link on how to configure AWS CLI)
+
+ Once you have configured AWS CLI, run the command below to log in to the ECR repository.
+aws ecr get-login-password --region <region  where ecr was create> | docker login --username AWS --password-stdin <your Repository URI>
+
+Remember I told you to take note of your repository URI, please replace it in the command above. Don’t forget to replace <region  where ecr was create>with  the region you are working in 
+
+You should get the output below.
+
+Now let's go ahead and tag our image then push it to ECR
+
+To tag the image, run the commands below
+docker tag webapp <ECR URI>:dev
+
+After tagging, you can now push the image to your ECR repository.
+docker push <ECR URI>:dev
+
+Let's now go back to our ECR dashboard and verify if the image has been pushed.
+
+On our ECR dashboard, click on the ECR repository you created.
+
+You will see the image you pushed and all the information about it.
+
+Take note of the image URI, you will need this when deploying your application to ECS
+
+As you can see, this is a very good solution for image repository management in the company. Please go ahead and practice more to have a better grasp.
+
+In the Next Project, we will deploy the image to AMAZON ECS
+
+
+https://dataservicegroup.atlassian.net/wiki/x/AYB0hQ

@@ -1,0 +1,360 @@
+Hosting a static website with S3, CloudFront and Route53
+
+Owned by Suzie Fontang
+Last updated: Aug 31, 2024 by Estephe Kana
+11 min read
+
+To accomplish this project, we will use the following AWS services:
+
+    S3 bucket
+
+    IAM
+
+    CloudFront 
+
+    Route53
+
+    AWS Certificate Manager 
+
+Prerequisites: 
+
+Before starting this project, you must have an AWS account and have access to an IAM user with administrator access.
+
+Here are the steps we will follow to accomplish the project:
+
+    Create a S3 bucket
+
+    Upload web files to the S3 bucket
+
+    Secure S3 bucket through IAM policies
+
+    Serve content from the S3 bucket with CloudFront
+
+    Create a domain name on Freenom
+
+    Link domain name to Route53
+
+    Direct traffic from route53 to Cloudfront and set security (HTTPS)
+
+Download and unzip the source code
+
+You can download source code from GitHub using this link (code)
+
+After downloading the code, you need to unzip it in your Downloads folder. 
+Part 1: Serve the website from the S3 bucket 
+
+In this part, we create an S3 bucket, put the code for our website and then configure the S3 bucket to serve our website from a bucket website endpoint.
+1- Create a S3 bucket in AWS
+
+At this step, you know how to create an S3 bucket in AWS. Go ahead and create an S3 bucket in AWS.
+
+Bucket name: s36tutorial (Choose a name that is unique worldwide)
+2- Upload web files to the S3 bucket
+
+After creating your bucket, its name will appear in the list of buckets. You can click on the name of the bucket. Then click on Upload
+
+Select all the folders and files in the schoolstatic-main folder, then drag and drop them into the S3 interface. Then scroll down and click on Upload
+
+ 
+
+You will have around 54 files and folders uploaded.
+
+Please do not close the tab while the upload process is going on.
+
+In the bucket, you will see the objects uploaded.
+3- Secure S3 bucket through IAM policies (setting public access on files)
+
+We have uploaded the static files of our website to the Amazon S3 we created, lets now make the files public so that anyone can access with a link And also set the IAM policies.
+
+    On the S3 console click on the S3 you created
+
+    Click on the Permissions tab then in the Block public access section, click on Edit
+
+    Untick the Block all public access box and click on Save changes
+
+Confirm the operation if required
+
+    Now, scroll down to Bucket policy and click on Edit
+
+    Delete whatever  is inside the box
+
+    Copy the code below and paste but replacing bucket-name with the name of your S3 then scroll down and click on Save changes.
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::bucket-name/*"
+        }
+    ]
+}
+
+Make sure you modify the bucket-name in line 9. If not, you will get an error
+4- Configure S3 bucket properties
+
+Let's configure our S3 bucket so that we can access the static web pages.
+
+You need to specify the default page and error page for your website.
+From the S3 dashboard, click on the name of the bucket, then click on the Properties tab.
+
+    Scroll down to the Static website hosting section and click on its Edit button.
+
+    Select Enable for Static website hosting.
+
+    Also, select Host a static website for the Hosting type.
+    Enter the file for your Index document and Error document. The Error document is optional. 
+
+    I used index.html for both Index document and Error document.
+
+    Scroll down and click on Save Changes.
+
+After saving, still on the Properties tab scroll down to static website hosting and click on the bucket website endpoint, it will display your website.
+Part 2: Serve content from the S3 bucket with CloudFront
+
+In this part, we create a CloudFront distribution that will be used to serve our website. Cloudfront will provide a Distribution domain name on which we will be able to access the website from the browser.
+
+You create a CloudFront distribution to tell CloudFront where you want content to be delivered from, and the details about how to track and manage content delivery.
+1- Create the CloudFront distribution
+
+From the Services drop-down, scroll down to Networking & Content Delivery section and right-click on CloudFront to open it in a new tab. This should take you to the CloudFront dashboard.
+
+    Click on Create Distribution.
+
+    Under the Origin settings section, click on the Origin Domain Name field and select the S3 bucket you created earlier. Then click on Use website endpoint button.
+
+ 
+
+    In the Origin Path field, leave it blank. 
+
+    For the field Enable Origin shield, select NO
+
+Scroll down to the Default Cache Behavior settings section. For Viewer Protocol Policy, select Redirect HTTP to HTTPS.
+
+    In the Web Application Firewall section, choose Do not enable security protections just for the demo.
+
+    Next, scroll down to the  Settings. Inside the Default Root Object field, enter the filename at the root level, which should be your landing page. I used index.html as my Default Root Object.
+
+    Leave the rest of the options as default and click on Create Distribution.
+
+Now, you can see the distribution you created from the CloudFront dashboard.
+
+It might take a few minutes for it to be deployed. Be patient
+
+
+After the CloudFront distribution has been deployed, copy the URL from the Domain Name column and paste it into your browser.
+
+
+
+If you open the distribution domain name while the distribution is still deploying, the page will display a message: This site can’t be reached
+
+You should now know how to host a static website with Amazon S3 and speed up content delivery using AWS CloudFront. 
+Part 3: Serve the website using a custom domain name with Route 53
+
+Even though you had to go through a few steps, the next thing is to set a custom domain name with Route53.
+
+You notice that the domain provided by CloudFront is too long and not user friendly so in that case we need to link it to custom domain that is user friendly and shorter.
+1- Create domain name
+
+You can create a domain on Freenom or any other site specialized in that.
+
+Example: namecheap.com
+
+In this section, we will use Namecheap to register our domain name
+
+    Navigate to 
+
+     , enter your desired domain name, and click Search.
+
+
+Namecheap provides multiple domain names so scroll down and select the cheapest since this is just for practice. Once you find a cheap domain, click on Add to cart.
+
+At the bottom of the page, click Checkout. Verify if the  order is, then click on Confirm Order
+
+ 
+
+The next page will ask you to login or create an account. If you have an account already, fill out the form to login.
+
+Since you don't have an account yet, fill out the form to create an account then scroll down and click on Create account and Continue
+
+    On the next page enter your contact information then click Continue  
+
+    On the next page verify the contact information and click Continue
+
+    On this next page, enter your billing information then click on continue to make payment. Once payment is done, return to the homepage.
+
+    At the top right, click on Account
+
+    Now on the page that shows click on Domain list. Here you will see the domain you bought.
+
+2- Link domain name to Route53
+
+Route53 is a managed DNS service from AWS. It resolves domain names such as 
+
+  to its equivalent IP address from the domain provider. Route53 also offers traffic management with various routing policies.
+a- Create a Hosted zone in Route 53
+
+To create a hosted zone, navigate to AWS Console → Services → Route53 →  Hosted Zones (in the left panel under Dashboard) and click the Create hosted zone button. You will be prompted with the below screen.
+
+    In the Domain name field, enter the domain name you registered on Namecheap
+
+    Set Type as Public and click on Create hosted zone
+
+Once the hosted zone is created, you need to configure the name servers on your domain provider (Namecheap)  and link your domain name to CloudFront. 
+b- Configure the nameservers in your domain name provider
+
+To do that, follow the steps:
+
+    On the Hosted zones dashboard click on the hosted zone you created 
+
+    On the dashboard, you will see the records created automatically by AWS when you created the hosted zone
+
+    Select the record with the type NS. On the sidebar Record details, you will see the NS values you will add to the Namecheap name servers.
+
+    Now, go to Namecheap dashboard domain list  then click on the MANAGE button of your domain name
+
+    Now, scroll down to the NAMESERVERS field and click on the arrow down 
+
+    Select Custom DNS.
+
+ 
+
+    Now copy and paste the nameservers from aws one after the other (Without the . at the end) then click on the tick to save.
+
+NOTE: It might take upto 24 hours for the nameservers to propagate to aws route53
+
+What is left is to direct traffic from Route53 to CloudFront but before configuring let's add an alternate domain name on Cloudfront.
+3- Add an alternate domain name on CloudFront
+
+Here, we are going to add the new domain name created on Namecheap as an alternate domain name on CloudFront. So that we can access our website from that domain name as well.
+
+    Go to the CloudFront management dashboard
+
+    Click on the distribution you created
+
+     In the Settings section under General tab, click on Edit
+
+    On the Alternate domain field, click on Add item then fill in the domain name you registered on Namecheap
+
+74f5f207-0642-4d77-af24-2c693ead54ae.png
+
+In the next steps we will secure the website with https. (For that, we will request a SSL certificate for Domain Validation). The SSL certificate secures your website and adds the HTTPS:// string in the URL before the domain name.
+
+    Scroll down to Custom SSL and click on Request certificate
+
+You will be taken to a new tab, select Request a public certificate then click on Next
+
+In the Domain names section, enter the domain name in the Fully qualified domain name field then scroll down and click on Request to create the certificate. 
+
+The certificate will take some time (up to 30 minutes or more) to be created so just be patient. It will go from status “Pending validation” to “issued”
+
+You can click on View certificate to see the certificate details. The certificate shows Pending at the beginning and once it is issued the status changes to issued.
+
+You can continue with the next step while waiting for the certificate to be issued.
+
+In the certificate you just created, scroll down to the Domains section and click on Create records in Route 53. 
+
+Then click on the Create records button
+
+Return to the previous tab from where you were redirected (Settings for the distribution), select the certificate you just created for the custom SSL and click on Save changes. 
+
+ 
+
+You might need to refresh the section to see the certificate display in the list
+
+After saving the changes, the distribution will be updated and the modifications will be deployed
+Setting records on route53 to direct traffic to CloudFront
+
+In your domain-hosted zones in Route 53, click on  Create Record.
+
+We will be creating it as an A record for IPv4 and we’ll select the Alias option.
+In the Alias Target (Route traffic to), select Alias to CloudFront distribution
+
+Then, select your CloudFront distribution and click on Create records
+
+Warning: The Alternate Domain Name you configured in CloudFront must match the record set name — so if you don’t see your CloudFront distribution in the target drop-down list, that is probably the reason.
+Testing website
+
+Congratulations you just hosted a secured website on AWS
+You can visit the domain you registered in Namecheap to see your application.
+
+ 
+Read more …
+
+Always read the AWS documentation in case you are block on a particular error or just to know more about aws services. Below are the links to the documentations of all the services used in this tutorial.
+
+ 
+
+services
+	
+
+Documentation
+
+S3 bucket
+	
+
+ 
+
+IAM
+	
+
+ 
+
+Route53
+	
+
+ 
+
+Cloudfront 
+	
+
+ 
+
+ 
+Clean Up: 
+
+Always remember to delete all the resources you create in AWS to avoid further charges in the cloud.
+
+
+
+
+https://dataservicegroup.atlassian.net/wiki/x/AYCQhQ
+
+
+
+
+
+Host a secure static school information website
+
+A client needs you to host his school website (meaning the information is hard-coded).
+These are the requirements:
+– The website must be accessible via a unique domain name.
+– The site should be accessible to users worldwide.
+– The website must load quickly to ensure a smooth user experience.
+– The client requires a hosting solution that is both efficient and cost-effective
+– The website must be secured with HTTPS.
+Tips
+
+The school website is static content which means there is no database. It is just a piece of HTML code that needs to be delivered. So to host this website we have 2 solutions:
+
+    Use one single EC2 instance with a load balancer in front of it and send the traffic through HTTPS
+    Use an Amazon S3 bucket to hold your static website files and an Amazon CloudFront distribution to serve your website globally. Amazon Route 53 will manage your domain name, and AWS Certificate Manager will provide a valid SSL/TLS certificate.
+
+We will use the second solution which is the must efficient for this purpose.
+
+Services to be used
+
+Amazon S3
+Amazon CloudFront
+Amazon Route 53
+AWS Certificate Manager
+
+Prerequisites
+
+You will need to create an account on Namecheap to register your domain name if you don’t have one.
+Other materials
+
+here is the link to the documentation: Click here

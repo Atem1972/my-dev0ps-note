@@ -1,0 +1,93 @@
+Data Services Group
+Deploy a single container application to ECS
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Aug 26, 2024 by Estephe Kana
+4 min read
+
+In this project, we will deploy a single container application to ECS.
+
+Prerequisite
+
+    Make sure you have gone through the project to push an image to ECR (link here)
+
+To deploy to ECS, we need to create a cluster, a task definition and services.
+1- Create a cluster.
+
+Go to the ECS dashboard on your AWS account. 
+
+Click on clusters
+
+On the page that shows up, click on Create Cluster.
+
+Now enter the cluster name then scroll down and click on Create 
+image-20240723-043237.png
+
+Once the cluster is created, you will get the output below
+
+We are done creating the cluster, let's go ahead and create a task definition.
+2- Create a task definition.
+
+On the sidebar, click on Task definitions. Then click on  Create a new task definition.
+
+On the page that shows up, Enter the task definition family name.
+
+On the container details, Enter the image URI (remember you were asked to take note of the image URI in the previous project as you will need it for the deployment to ECS)  and the container name (any name of your choice). 
+
+We will use the Container name in the next project, where we will be creating a pipeline to auto-update and deploy our application.
+
+Now just scroll down till the end of the page, then click on Create.
+
+Once it's created, you will get the results below
+
+Now that the task definition is created,  let's go ahead and create a service to run our application.
+3- Create a Service 
+
+To create the service, Click on Clusters on the sidebar
+
+Then click on the cluster you created earlier.
+
+On the page that comes up, scroll down to service and click on Create
+
+Scroll down to Deployment configuration bloc, then on Task definition and select the task definition you created earlier as Family
+
+Then enter the Service name
+
+Now scroll down to Load Balancing
+
+Select Application Load balancer for load balancer type.
+
+Enter the Load Balancer name
+image-20240723-043900.png
+
+Scroll down to Target group
+
+Select Create new target group
+
+then change the name of the target group to DevTarget
+image-20240723-044050.png
+
+Once you are done, scroll down and click on Create.
+
+You have to wait for some minutes for the service to be created and ready to use.
+
+When the service is created, you will get the  screen below:
+
+Warning: Ensure that the HTTP port (port 80) is open in the respective security groups of the load balancer.
+
+Now, let's access our application.
+
+To access the application we just deployed, go to the Load Balancer dashboard on the EC2 service.
+
+Then copy your Load balancer DNS name and paste it into the Browser
+
+you will get the output below.
+
+You can practice more by adding a domain name and an SSL certificate(HTTPS)
+
+Congratulations, you just deployed a single container app to ECS. In the Next phase, we will create a pipeline using CodeBuild, CodePipeline and CodeDeploy  to automate the update on our application 
+
+
+
+
+https://dataservicegroup.atlassian.net/wiki/x/AQB2hQ

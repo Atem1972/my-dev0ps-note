@@ -1,0 +1,50 @@
+Migrate On-premise Infrastructure to cloud
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Aug 15, 2024 by Estephe Kana
+2 min read
+Scope
+
+ICARE, One of your clients, currently operates a web and mobile application for its customers. This application relies on a REST API, with the web portion being served from dedicated static content servers. Additionally, the application utilizes a central customer database and a corporate mail server for its functionalities. Access logs are sent to a distinct storage system, and employees also rely on a separate application (such as a CRM or ERP system) that shares the same database.
+
+NOTE: All elements of this setup are currently hosted within a single datacenter on bare metal hosts. Load balancers and servers each have two replicas, with the database consisting of a primary and a read replica.
+What is expected of you?
+
+ICARE is considering migrating as much of this infrastructure as possible to the AWS cloud. This decision stems from the need to address challenges related to scaling the web and app tiers as customer demand grows, as well as the desire for increased redundancy, and disaster recovery,  given the current reliance on a single datacenter.
+
+So your task is to propose an architecture design on AWS cloud that will mitigate the on-premise infrastructure’s challenges.
+
+See the infrastructure diagram below.
+
+ 
+
+Note that you are not required to migrate the whole architecture, but you should migrate as mush a possible.
+Related pages
+Run a python script using a Lambda function
+Run a python script using a Lambda function
+COURSE - AWS tutorials
+Read with this
+DevOps Hiring Exercice
+DevOps Hiring Exercice
+COURSE - DevOps tutorials
+More like this
+Build a User registration API with API Gateway, Lambda and DynamoDB
+Build a User registration API with API Gateway, Lambda and DynamoDB
+COURSE - AWS tutorials
+More like this
+Hosting a static website with S3, CloudFront and Route53
+Hosting a static website with S3, CloudFront and Route53
+COURSE - AWS tutorials
+Read with this
+Deploy a single container application to ECS
+Deploy a single container application to ECS
+COURSE - AWS tutorials
+More like this
+Configure CloudWatch logs for API gateway, Lambda function, S3, DynamoDB, and setup SNS notifications.
+Configure CloudWatch logs for API gateway, Lambda function, S3, DynamoDB, and setup SNS notifications.
+COURSE - AWS tutorials
+Read with this
+
+
+
+https://dataservicegroup.atlassian.net/wiki/x/LwCBiQ
