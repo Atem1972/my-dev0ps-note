@@ -1,0 +1,291 @@
+Jenkins pipeline - maven - docker - ECR Project
+
+Owned by Suzie Fontang
+Last updated: Sep 09, 2024 by Hermann90
+11 min read
+
+The goal of this project is to : 
+
+    Compile a maven project from our GitHub repository (helloworld_pipeline) using a Jenkins Pipeline
+
+    Build and test the project
+
+    Generate the docker image of our code after the build
+
+    Deploy our docker image to AWS ECR. 
+
+All these steps are done in a declarative pipeline process from our Jenkins server
+Project details
+
+1- We have a repository that contains the application (with a Dockerfile) code and a Jenkinsfile.
+2- Through a Jenkins server, we will build the pipeline using this repository and our Jenkinsfile.
+3- Still using Jenkins, we will create docker images, and then store them in AWS ECR each time a build is performed.
+Project architecture
+Steps to realize the project
+
+Step 1: Install docker on our Jenkins server.
+Step 2: Create the IAM user in AWS.  
+Step 3: Create an AWS ECR repo.
+Step 4: Jenkins plugin installation.
+Step 5: Edit Jenkinsfile in your GitHub Repository.
+Step 6: Perform the first tests.
+Step 1: Install docker on our Jenkins server.
+
+Docker will allow us to generate the image of our application. And you know that to be able to run docker commands, we need to install docker on the server
+
+Here, you must have launch your jenkins file from the devops-test/devops-lab/ami-jenkins-nexus folder. Also, you must remember to modify the AMI of the Jenkins server in the terraform.tfvars file then save the file before running the terraform apply --auto-approve command
+
+At the end you will get the ssh command and the URL link of the jenkins server. Login to the server both in the terminal and in the browser.
+
+    Open a Gitbash terminal and connect to our Jenkins server.
+
+    Run the following command to install docker:
+
+sudo yum install docker -y
+
+    Start docker and check its status
+
+sudo systemctl start docker
+sudo systemctl status docker
+sudo chmod 777 /var/run/docker.sock
+docker ps
+Step 2: Create the IAM user in AWS
+
+We will create a user in the AWS IAM service to manage the connection between our Jenkins Server and the ECR repository that we will create.
+
+    Login to your AWS console.
+
+    Click on Services >> Search for IAM >> Users >> Add users.
+
+    Type the username: jenkins-ecr
+
+    Then click on the Next button.
+
+    Add User to the Administrator group, then click on the Next: Tag
+
+Here, you must have an administrator group in your Account from previous lessons on IAM service. We created this group during those lessons on AWS IAM. 
+
+    Add a tag if you want, then click on Create User.
+
+    Select the created user in the list then click on the Security Credentials tab and then on Create Access Key
+
+    Select the Command Line interface and make sure you check the confirmation checkbox. Then click on Next
+
+    Write a brief description for the key, then click on Create access key button
+
+    Copy the access key and the secret key created, then save them somewhere. Make sure you download the .csv file and click on Done
+
+    We will use them to configure the access to ECR from our Jenkins server.
+
+Step 3: Create an AWS ECR repository 
+
+The ECR repository we are going to create will allow us to store the docker images of our application each time a build is generated
+
+    In your AWS dashboard, click on Services >> search for ECR >> select ECR
+
+    On the right, click on the Create repository button, enter the repository name (devops_repository) (Make sure the repo is Private)
+
+    Scroll down and click on the Create Repository button. 
+
+Now that we have created our repository, copy the URL and save it just like the access keys we previously created. These parameters will make it easier to configure the Jenkins pipeline
+Step 4: Jenkins plugins installation.
+
+In this step, we will install a set of plugins in the Jenkins web interface. These plugins will allow us to manage credentials, connect to ECR, and generate our docker images.
+
+First, make sure you are logged in to your Jenkins dashboard in the browser.
+
+    Click on Dashboard >> Manage Jenkins >> Plugins >> Available plugins
+
+a- Install plugin: Cloudbees AWS credentials
+
+The first plugin we will install is CloudBees AWS Credentials. Enter CloudBees AWS in the search bar, then check this plugin and click on Install without restart
+
+b- Install plugin: Amazon ECR
+
+The second plugin we will install is Amazon ECR. Enter Amazon ECR in the search bar, then check this plugin and install it
+
+c- Install the plugin: Docker
+
+The last plugins we will install are the plugins for Docker. Enter Docker in the search bar, then install these 4 plugins: Docker, Docker Pipeline, Docker API, docker-build-step
+Step 5: Configure credentials for ECR access
+
+We have finished the installation of the plugins, and now we will configure the credentials, for access to ECR.
+
+    Click on Dashboard >> Manage Jenkins >> Credentials >> System >> Global credentials
+
+    Click on Add Credentials
+
+In this window, the access key and secret access key are credentials you get when creating an IAM user in the AWS
+
+    Select Kind: AWS Credentials
+
+    ID: put in the name of the user you created in AWS (jenkins-ecr)
+
+    Description: Put in a brief message like credential for ECR access
+
+    Access Key ID: Put in the Access key of the AWS IAM user
+
+    Secret Access Key: Put in the secret key
+
+Step 6: Edit the Jenkinsfile in your GitHub Repository
+
+we are going to write the code of our pipeline in our helloworld_pipeline repository, using these steps :
+
+    Login to your Github account and open the helloworld_pipeline repository to edit the content of the Jenkinsfile of our repository.
+
+Remember we created this repository in the previous tutorial: Creating a declarative Jenkins pipeline using a Jenkinsfile
+
+    The content of the Jenkinsfile should look like the following
+
+        Change the registry value (line 7) and put in your own ECR repository URL.
+
+        Put your own GitHub repository URL (line 14)
+
+        Check line 37 if you have the right AWS region value (We used us-east-1)
+
+Case 1: using credentials created in AWS 
+pipeline {
+    agent any
+    tools{
+        maven 'M2_HOME'
+    }
+    environment {
+        registry = '076892551558.dkr.ecr.us-east-1.amazonaws.com/devop_repository'
+        registryCredential = 'jenkins-ecr'
+        dockerimage = ''
+    }
+    stages {
+        stage('Checkout'){
+            steps{
+                git branch: 'main', url: 'https://github.com/utrains/helloworld_pipeline.git'
+            }
+        }
+        stage('Code Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+        stage('Build Image') {
+            steps {
+                script{
+                    dockerImage = docker.build registry + ":$BUILD_NUMBER"
+                } 
+            }
+        }
+        stage('Deploy image') {
+            steps{
+                script{ 
+                    docker.withRegistry("https://"+registry,"ecr:us-east-1:"+registryCredential) {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }  
+    }
+}
+Case 1: Using roles created in terraform code
+
+ 
+pipeline {
+    agent any
+    tools{
+        maven 'M2_HOME'
+    }
+    environment {
+    registry = '076892551558.dkr.ecr.us-west-2.amazonaws.com/jenkins_ecr_registry'
+    region = 'us-west-2'
+    dockerimage = ''
+  }
+    stages {
+        stage('Checkout'){
+            steps{
+                git branch: 'main', url: 'https://github.com/Hermann90/helloworld_jan_22.git'
+            }
+        }
+        stage('Code Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+        stage('Build Image') {
+            steps {
+                script{
+                    dockerImage = docker.build registry + ":$BUILD_NUMBER"
+                } 
+            }
+        }
+        stage('docker login'){
+            steps{
+                script{
+                    sh 'aws ecr get-login-password --region "${region}"| docker login --username AWS --password-stdin "${registry}"'
+                }
+            }
+        }
+
+        stage('Deploy image') {
+            steps{
+                script{ 
+                    dockerImage.push()
+                }
+            }
+        }  
+    }
+}
+
+ 
+
+    Save and then make a commit. 
+
+    You can see here a small description of our Jenkinsfile
+
+Step 7: Perform the first tests.
+
+Now that the commit has been done in our repository on the Jenkinsfile, we can perform the build:
+On the Jenkins web interface click on the project devops-ci then click on Build Now.
+
+Remember we created this job in the previous tutorial
+
+if the build fails the very first time, don't panic! here are some solutions you can try: 
+Now that the commit has been done in our repository on the Jenkinsfile, we can perform the build:  
+it is very likely that the firewall is enabled or Jenkins does not have access to the docker group
+
+To solve these problems, connect to the terminal of the Jenkins server, then execute the following commands:
+
+Notes : these commands allow us  to solve the access issue to docker directories by the Jenkins user
+
+sudo systemctl stop firewalld
+sudo systemctl disable firewalld
+sudo chmod 777 /var/run/docker.sock
+sudo groupadd docker
+sudo usermod -aG jenkins
+sudo usermod -aG docker jenkins
+sudo systemctl restart docker
+
+    sudo systemctl restart jenkins
+
+When all goes well, we must have the result of the execution of the 4 stages of our pipeline.
+
+Open the console to see what happens in each step, then comment on the logs that appear.
+as a reminder, in the enterprise, this is the console that will allow you to analyze and resolve the errors in your pipeline
+
+open your AWS account, then go to your ECR repository to see its content
+
+
+you will see that for each build, a docker image is created and sent to this repository with the build number as the version
+
+At this level, you have better understanding on how Jenkins pipelines work and how we can use them in the enterprise milieu to put in place CI/CD pipelines.
+
+Exercice: Create a new AMI in AWS for your jenkins server so that you keep all the work done this far
+
+
+https://dataservicegroup.atlassian.net/wiki/x/VwCVhg

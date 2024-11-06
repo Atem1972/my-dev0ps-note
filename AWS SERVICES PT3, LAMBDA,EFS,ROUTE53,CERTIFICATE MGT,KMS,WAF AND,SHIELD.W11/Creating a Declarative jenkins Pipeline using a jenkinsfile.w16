@@ -1,0 +1,176 @@
+Creating a Declarative jenkins Pipeline using a jenkinsfile
+
+Owned by Suzie Fontang
+Last updated: Dec 13, 2023 by Hermann90
+7 min read
+
+In this tutorial, we will learn how to create a declarative pipeline with a Jenkinsfile. This Jenkinsfile must be in your GitHub repository in the same directory where the code of the project you want to configure the CI/CD pipeline for is found. We will thus configure the pipeline in the code repository, find the Jenkinsfile, and then run it to build the job.
+Prerequisites:
+
+Before starting, you must:
+
+    Have a Jenkins server up and running
+
+    Login to your Jenkins server browser interface
+
+    Have made the tutorial on Creating a simple Pipeline in the Jenkins UI
+
+1- Fork the repository for the project
+
+Here, we will fork a repository from the utrains github account
+
+    Click on the following link to open the repository: 
+
+ 
+
+Now, click on Fork to fork it a put it in your own GitHub account. 
+
+     Put in the Repository name: helloworld_pipeline. After that, click on Create fork
+
+After forking the repository, you will have it in your own GitHub account.
+
+In your account, click on Code then copy the link
+
+ 
+2- Create and build the Jenkins pipeline
+
+Login to your Jenkins server: 
+
+    Click on Dashboard >> New Item then put in the name of the job (devops-ci)
+
+    Select Pipeline ad and click OK
+
+In the project configuration page that opens, put in the project configuration
+
+    Project description: Put in a description for the job
+
+    Scroll down to the Pipeline section. Under the Definition section, select Pipeline script from SCM
+
+    In the SCM section, select Git
+
+    Under Repositories, paste the repository URL of your GitHub project
+
+    Under Branch specifier, put */main
+
+    Click on Apply then on Save
+
+    Click on Build Now to build the job
+
+Here the build will fail because the pipeline cannot run without a Jenkins file in the repository
+
+If you click on the console output of the build number, you will realize that the job has fail. The error message says Unable to find Jenkinsfile from the git repo
+
+Let’s create a Jenkinsfile in the repo and restart the build process.
+
+    Open your repository, click on Add file then on Create new file.
+
+    Name the file Jenkinsfile (with a capital 'J') and paste in the following content
+
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Build Step'
+                sleep 10
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Test step'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploy Step'
+                sleep 10
+            }
+        }
+        stage('Docker') {
+            steps {
+                echo 'Image step'
+            }
+        }
+    }
+}
+
+Now, click on commit changes
+
+Allow the default commit message, allow the option Commit directly to the main branch then click on Commit changes.
+
+ Now, we have a Jenkinsfile in our repository.
+
+Note: This is just for practice. The best way to create a new file in a repo is to do it from the terminal. That is, you create the file from the local repo, make necessary modifications and push it to the remote repo.
+
+On the Jenkins page, click on the job name, then on Build Now to build the job once more. The build will be successful and you can click on the console output to check the results. In the stage view, you can see all the stages that were defined in the Jenkinsfile
+3- Build a simple maven project with the Jenkinsfile
+
+Let's modify our Jenkinsfile
+
+In your GitHub repository,  click on the Jenkinsfile then click on the pencil icon to edit the file
+
+    Paste in the following code
+
+pipeline {
+    agent any
+    tools{
+        maven 'M2_HOME'
+    }
+    stages {
+        stage('Build') {
+            steps {
+                sh 'mvn clean'
+                sh 'mvn install'
+                sh 'mvn package'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploy Step'
+                sleep 10
+            }
+        }
+        stage('Docker') {
+            steps {
+                echo 'Image step'
+            }
+        }
+    }
+}
+
+In this Jenkinsfile code, we run maven commands to do the following:
+
+    In the first stage (Build) we do the compilation the build and the installation
+
+    In the second stage (Test), we launch the unit tests with the mvn test command
+
+    The third and the fourth stages we just run simple echo commands 
+
+    To run the maven commands, we had to declare a tools block to specify the mave environment variable
+
+Now, commit the changes with a new commit message
+
+ 
+
+Then, click on Build Now in the Jenkins interface to build the project. You can check the results after the build
+
+We have a stage in our pipeline to compile our maven project. As you know, this generate a war file sometimes a jar file that we can deploy.
+
+    When the build generates a jar file, we can launch it with the java -jar command, that loads a tomcat container and then deploy the application in this container.
+
+    When the build generates a war file, a DevOps engineer  needs to create and configure the Tomcat server in order to deploy the application.
+
+    So, we will define Devops project in which we'll modify the deploy stage of our jenkins pipeline so that the war file is contained in a docker image and sent to our AWS ECR.
+    Note: We can push docker images of our applications to ECR just like in DockerHub. The major difference between ECR and DockerHub is that ECR performs an analysis of the image to detect potential security holes.
+
+Project: Build a Jenkins pipeline which build a maven job, containerize the build and push the docker image created to ECR
+ 
+
+ https://dataservicegroup.atlassian.net/wiki/x/CgCYhg
+
+ Creating a simple Pipeline in the Jenkins UI: https://dataservicegroup.atlassian.net/wiki/x/A4CYhg

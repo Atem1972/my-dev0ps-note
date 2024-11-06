@@ -1,0 +1,117 @@
+Data Services Group
+2- Ansible Inventory Introduction
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Sep 10, 2024 by Estephe Kana
+3 min read
+What is Ansible Inventory?
+
+Ansible is an automation tool that works for multiple systems in an infrastructure simultaneously. To manage this, we use a system list known as an inventory.
+
+The Ansible inventory file contains the list of all managed host names, with one line per host. Proper inventory management is crucial in Ansible.
+server1
+server2
+
+Note: You can define hostnames using IP addresses, and hostnames.
+
+By default, the Ansible host inventory file is located under /etc/ansible/hosts. You can specify a different inventory file using the -i <path> option on the command line.
+
+    ansible-playbook -i /root/database_servers install.yml
+
+    The command below is just an example of the syntax, it will display ERROR! the playbook: install.yml could not be found , if you try it on the ansible-lab environment since database_servers does not exist
+
+    Important: Passwordless SSH authentication between the Ansible master server and client hosts must be enabled. Failure to do so will result in a "Failed to connect to the host via SSH: Permission denied" error. 
+
+    in the lab we set up in the previous tutorial, we already configured the ssh key connection.
+
+Hosts Groups Declaration:
+
+Declare different groups in a single host inventory file. For example, if you have databases and web servers, list the server names under each group.
+[database-servers] 
+server1
+server2
+[webservers]
+web1
+
+    web2
+
+Note: A host can belong to more than one group.
+Inventory File Parameters:
+
+By default, Ansible works on SSH port number 22. If you have a different port for connecting to hosts, define the hosts accordingly.
+web1:4301
+
+Define the connection type and user, depending on the target hosts.
+[webservers] 
+web1 ansible_connection=ssh ansible_user=mjohn
+
+    web2 ansible_connection=ssh ansible_user=peter
+
+    Commonly Used Parameters:
+
+        ansible_connection:
+        The ansible_connection parameter specifies the type of connection to the host. It can be the name of any Ansible connection plugin. SSH protocol types include smart, ssh, or paramiko. The default is smart.
+
+    General for All Connections:
+
+        ansible_host:
+        The ansible_host parameter is used to specify the name of the host to connect to if it differs from the alias given to it.
+
+        ansible_port:
+        If the SSH port is different from the default (22), the ansible_port parameter allows specifying the port number.
+
+        ansible_user:
+        The ansible_user parameter sets the default SSH username.
+
+    Specific to SSH Connection:
+
+        ansible_ssh_pass:
+        The ansible_ssh_pass parameter is used to set the SSH password (avoid storing in plain text; use a vault which we will see later in the tutorial).
+
+        ansible_ssh_private_key_file:
+        If multiple SSH keys are used, the ansible_ssh_private_key_file parameter specifies the private key file for SSH.
+
+        ansible_ssh_common_args:
+        This parameter is always appended to the default command line for SFTP, SCP, and SSH. It is useful for configuring a proxy command for a specific host or group.
+
+        ansible_sftp_extra_args:
+        Appended to the default SFTP command line.
+
+        ansible_scp_extra_args:
+        Appended to the default SCP command line.
+
+        ansible_ssh_extra_args:
+        Appended to the default SSH command line.
+
+        ansible_ssh_pipelining:
+        Determines whether to use SSH pipelining, potentially overriding the pipelining setting in ansible.cfg.
+
+        ansible_ssh_executable (added in version 2.2):
+        This parameter overrides the default behaviour to use the system SSH executable, potentially overriding the ssh_executable setting in ansible.cfg.
+
+    Privilege Escalation:
+
+        ansible_become:
+        Equivalent to ansible_sudo or ansible_su, it forces privilege escalation.
+
+        ansible_become_method:
+        Sets the privilege escalation method.
+
+        ansible_become_user:
+        Equivalent to ansible_sudo_user or ansible_su_user, it sets the user for privilege escalation.
+
+        ansible_become_pass:
+        Equivalent to ansible_sudo_pass or ansible_su_pass, it sets the privilege escalation password (avoid storing in plain text; use a vault).
+
+        ansible_become_exe:
+        Equivalent to ansible_sudo_exe or ansible_su_exe, it sets the executable for the selected escalation method.
+
+        ansible_become_flags:
+        Equivalent to ansible_sudo_flags or ansible_su_flags, it sets the flags passed to the selected escalation method. This can also be set globally in ansible.cfg in the sudo_flags option.
+
+    For additional parameters, refer to ansible.org.
+
+In summary, we covered essential Ansible inventory parameters that play a key role in configuring connections, defining hosts, and enabling privilege escalation. These parameters, such as ansible_connection, ansible_host, ansible_port, and others, offer flexibility for tailoring Ansible to specific environments.
+
+
+https://dataservicegroup.atlassian.net/wiki/x/5oBWiw

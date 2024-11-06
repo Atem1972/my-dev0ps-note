@@ -1,0 +1,169 @@
+Ansible Dynamic Inventory
+Be the first to add a reaction
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Sep 12, 2024 by Estephe Kana
+4 min read
+
+At work, due to the challenge in managing Ansible inventory, especially for EC2 instances, your assistance is needed in setting up a dynamic inventory system for  EC2 instances. As the infrastructure continues to grow, we require a more flexible and scalable solution for managing our inventory, and we believe that a dynamic inventory system is the best approach. Go ahead and implement this solution:
+
+After some research and watching some videos online on Ansible dynamic inventory, below are the steps to follow :
+
+    Install and configure the boto3 and botocore Python packages, which are required by the aws_ec2 plugin (plugin needed for the job).
+
+    Configure the aws_ec2 plugin to discover our EC2 instances in AWS dynamically. A request for AWS programmatic access should be submitted if you do not have access to AWS yet.
+
+    Test the dynamic inventory system to ensure that it is working correctly.  You can use Ad hoc commands to test.
+
+Note: Try to figure it out on your own. If not, the answer is below.
+
+To accomplish this task, follow the steps  below:
+
+    Set up Lab
+
+    Configure the dynamic inventory  
+
+    Run Ad hoc commands to test.
+
+1-Set up Test environment
+1-a) Write the infrastructure code
+
+Here we will set up the test environment using Terraform
+
+open git bash and move to the home directory
+cd ~
+
+Now clone the repository from GitHub
+git clone https://github.com/utrains/Ansible-Lab.git
+
+now cd into Ansible-Lab
+cd Ansible-Lab
+
+before launching the infrastructure, let's create a file to define our terraform variable values.
+code config.tfvars
+
+Copy and paste the code below
+#for the istance configurations, we can use any of the values "amazon,debian,ubuntu" so as to configure our nodes 
+# to use amazon linux, ubuntu or debian.
+instance_configurations = {
+  "master" = {
+    instance_type = "t3.micro"
+    name          = "master-instance"
+    user_data     = "install.sh"
+    ami           = "amazon"
+  },
+  "node1" = {
+    instance_type = "t3.micro"
+    name          = "node1-instance"
+    user_data     = ""
+    ami           = "amazon"
+  },
+  "node2" = {
+    instance_type = "t4g.micro"
+    name          = "node2-instance"
+    user_data     = ""
+    ami           = "ubuntu"
+  }
+}
+
+
+region = "us-east-1"
+
+keypair-name= "ansible-key"
+
+Now let's go ahead and launch the infrastructure
+1-b) Launch the Infrastructure
+
+To launch the infrastructure, run the commands below
+terraform init
+terraform plan -var-file="config.tfvars"
+terraform apply -var-file="config.tfvars" --auto-approve
+
+If the apply is successful, you should get the output below.
+image-20240510-111322.png
+
+You can see the ssh command to connect to each instance
+
+Now that we are done, let's SSH into our master server and configure Ansible. In my case, I used the command highlighted in the image above.
+2- Configure the dynamic inventory file
+
+    SSH into your master server.
+
+Once in your server, before we write the inventory file, we will need to configure AWS CLI on our master server.
+
+      Here is the link to configure AWS CLI on your terminal
+
+ 
+
+    Once done, create the file aws_ec2.yml
+
+sudo vi aws_ec2.yml
+
+    Add the code below to it 
+
+plugin: aws_ec2
+regions:
+  - us-east-1
+groups:
+#Dev servers group
+  dev: "'node1' in tags.Environment"
+# QA servers Group
+  qa: "'node2' in tags.Environment"
+  
+
+    Also, create an ansible.cfg and add the code below into it.
+
+sudo vi ansible.cfg
+
+    Add the code below inside and save
+
+[defaults]
+host_key_checking = False
+inventory=aws_ec2.yml
+interpreter_python=auto_silent
+localhost_warning=false
+deprecation_warnings = False
+private_key_file = /home/ec2-user/ansible-key.pem
+
+    Let's go ahead and test if the inventory has been configured.
+
+ansible-inventory  --list
+
+    Let's run the Ansible graph and see the various groups.
+
+To get the graph, run the command below:
+ansible-inventory  --graph
+image-20240510-111732.png
+
+The highlighted groups are the servers with environment tag dev and QA, respectively.
+
+In the next phase, we will run some Ad-hoc commands to test the dynamic inventory.
+3- Test the inventory
+
+In this section, we will run  Ad hoc commands to access our nodes.
+3-a) Run the ping command
+
+let's ping all the dev servers
+ansible dev  -m ping -u ec2-user
+Screenshot from 2024-01-20 05-03-43.png
+
+Now let's ping the QA servers:
+ansible qa  -m ping -u ubuntu
+Screenshot from 2024-01-20 04-59-55.png
+
+In the next test, we will install Git
+3-b) Install git 
+
+Here we will install Git just on the qa servers. To do that, run the command below:
+ansible qa -u ubuntu  -m apt -a 'name=git state=present'  --become
+Screenshot from 2024-01-20 05-06-50.png
+
+You just installed a package (Git) on your qa servers. For verification, SSH into the qa servers and type the following command to get the Git version: git version
+
+Congratulations, you just did a demo on Ansible dynamic inventory. You can go ahead and play with it to understand it better.
+
+Note: when done, please do not forget to destroy your Test environment
+
+terraform destroy
+
+ https://dataservicegroup.atlassian.net/wiki/x/AYA-gw

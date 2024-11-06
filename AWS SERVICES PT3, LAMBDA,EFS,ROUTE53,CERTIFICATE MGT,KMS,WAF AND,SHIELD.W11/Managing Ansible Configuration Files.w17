@@ -1,0 +1,40 @@
+4- Managing Ansible Configuration Files
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Sep 10, 2024 by Estephe Kana
+1 min read
+Managing Ansible Configuration Files 
+
+Let's look at managing Ansible configuration files and understand how to optimize them for specific use cases.
+
+    Default Configuration File: The default Ansible configuration file is located at /etc/ansible/ansible.cfg.
+
+    Parameters in ansible.cfg: The ansible.cfg file contains various parameters, such as inventory file location, library location, and modules. These defaults are commented out and you can uncomment and modify them to change the default behaviour.
+
+Overriding Configuration Parameters
+
+You can bypass configuration changes and specify arguments directly in Ansible commands. For instance, using a different inventory file (/root/databasehosts) without altering the configuration file:
+ ansible all -i /root/databasehosts -m shell -a uptime
+Multiple Configuration Files
+
+    Ansible allows multiple configuration files, reducing the need for constant changes based on the environment. Ansible searches for configuration files in the following order:
+
+    Environment variable ANSIBLE_CONFIG set or not (e.g., ANSIBLE_CONFIG=/root/ansible.cfg).
+
+    Current working directory.
+
+    Home directory.
+
+    /etc/ansible/ansible.cfg.
+
+    Managing separate configuration files is beneficial when dealing with distinct environments (e.g., databases, applications, web servers). This avoids the confusion of constantly modifying a single configuration file.
+
+Finding Used Configuration File
+
+To determine which configuration file Ansible is using, employ the -v (verbose) option:
+ansible all -m shell -a uptime -v
+
+This exploration provides a foundational understanding of Ansible Configuration Management. Future discussions will further explore Ansible functionalities through practical test cases.
+
+
+https://dataservicegroup.atlassian.net/wiki/x/J4FWiw

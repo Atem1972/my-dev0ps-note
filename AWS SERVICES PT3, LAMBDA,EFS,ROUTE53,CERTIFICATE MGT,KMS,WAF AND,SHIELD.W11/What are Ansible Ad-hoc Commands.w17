@@ -1,0 +1,48 @@
+3- What are Ansible Ad-hoc Commands?
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Sep 10, 2024 by Estephe Kana
+1 min read
+Ansible Ad-hoc Commands 
+Ansible ad-hoc commands serve as a quick way to perform simple operations through the command line, offering immediate results. While real automation primarily utilizes playbooks, ad-hoc commands are valuable for swift tasks, especially beneficial for beginners exploring Ansible.
+
+In scenarios where extensive operations are unnecessary, and quick tasks like restarting servers, checking uptime, or retrieving kernel versions are required, ad-hoc commands prove efficient. They offer a convenient alternative to writing extensive playbooks.
+
+Syntax of Ad-hoc Commands:
+ansible [hostgroup] module/options[arguments]
+
+    command: Ansible
+
+    host group: Specifies target machines for the task
+
+    module or arguments: Defines actions to be performed
+
+For example, to check the uptime of servers in the "servers" host group:
+ansible webservers -a "uptime"
+
+Ad-hoc commands use the -a option, executing the specified command directly. Additionally, modules can replace direct commands. Commonly used modules include apt/yum, ec2, file, service, template, and user.
+
+Examples of Ad-hoc Commands:
+
+    Checking server status using the ping module:
+
+    The -m argument is used to specify the Ansible module that you want to execute
+
+ansible webservers -m ping
+
+    Installing an HTTP web server using the yum module on webservers group ( -b option is used to gain root access) :
+
+    The option -a specifies arguments for the module
+
+ansible webservers -b -m yum -a "name=httpd state=present"
+
+    Managing user accounts using the user module:
+
+ansible databaseservers -b -m user -a "name=john state=present"
+
+Ad-hoc commands provide immediate solutions for specific tasks, offering a practical way to interact with Ansible. They complement playbooks, which are more suitable for complex and multi-step operations.
+
+In conclusion, Ansible ad-hoc commands are a quick and efficient means for executing simple tasks through the command line, making them ideal for immediate and straightforward operations. While playbooks are the backbone of real automation, ad-hoc commands serve as a valuable tool, especially for beginners exploring Ansible.
+
+ 
+https://dataservicegroup.atlassian.net/wiki/x/9wBXiw

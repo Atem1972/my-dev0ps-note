@@ -1,0 +1,190 @@
+clone this: https://github.com/utrains/DEVOPS-UTRAINS.git
+
+
+Sonar Cloud integration in Jenkins
+
+Owned by Hermann90
+Last updated: Sep 09, 2024
+5 min read
+
+In this page, we will describe How to create a SonarCloud Account and configure it on the Jenkins server
+Prerequisites
+
+Before starting this tutorial, you must:
+
+    Have a GitHub account
+
+    Have a Jenkins server up and running and access it through the terminal and the web browser
+
+    JAVA_HOME, Git, and Maven should be configured on the server.
+
+    Have done the first git-maven practice
+
+    terraform repository for automation: DevOps Repository for automation link
+
+Here, we consider that you successfully created the Jenkins server AMI in the git-maven practice, we will use that to create the Jenkins server now.
+
+    From your Gitbash terminal, switch to the devops-test folder then DEVOPS-UTRAINS
+
+cd devops-test
+cd DEVOPS-UTRAINS
+ls
+
+Now switch to the ami-jenkins-jfrog folder and open the terraform.tfvars file
+cd ami-jenkins-jfrog
+ls
+
+    code terraform.tfvars
+
+    The file will look like the following
+
+Replace the jenkins_ami value with the AMI of the server you created in the previous tutorial (git-maven practice). Then save the file
+
+Now, in the terminal, run terraform commands to launch the infrastructure:
+terraform init
+terraform plan
+terraform apply --auto-approve
+
+When the infrastructure is done creating, you have the outputs:
+
+    The ssh command for remote connection to the server
+
+    The server URL for connection to the web interface
+
+    Connect to the server in the terminal and in the browser
+
+    In your browser, enter the credentials:
+
+        username: devops
+
+        password: devops
+
+Verify that your JAVA_HOME, git and maven are installed on the server’s terminal
+
+sudo -i
+git -v
+mvn -version
+
+    echo $JAVA_HOME
+
+ 
+Create an account on SonarCloud (linked to Github)
+
+SonarCloud is the leading online service to catch Bugs and Security Vulnerabilities in your code repositories. Here, we will click on the SonarCloud link, and create an account if we don't have one already.
+
+Click on this link to open the Sonar creation account page Click here to Create Sonarcloud Account
+
+If you have never created an account in SonarCloud, click on Sign up, and the following page will appear. we will use our GitHub account to quickly create an account.
+
+The interface might be slightly different but just look for the right links and click
+
+    Authorize Sonar to access your GitHub account, by clicking on the button below.
+
+ 
+
+    A page appears with your GitHub account and asks you to import a new organization. In Sonar, accounts are linked to organizations. 
+
+    Select the account then Install Sonar on your GitHub
+
+    Type your GitHub Password then click on confirm button
+
+    Create your Organization: here, just check that the fields are correctly filled and then click on Continue to create your Organization
+
+    Payment plan: we choose here a free payment, but in the company, most of the time, it is a Paid plan for more functionality.
+
+We are done with the account creation. You might be asked to analyse a project but we won’t do that now
+Download, install, and configure the Sonar_scanner  tool and plugin on Jenkins
+
+Here you must be connected to the Jenkins server in the terminal and on the web interface. As a reminder, the information is :
+
+    login: devops
+
+    password: devops
+
+Note that points 1 and 2 have been automated in the Jenkins server creation script with terraform code. You can check the user data file in the Jenkins setup 
+
+ 
+
+1- Install the sonar-scanner tool and the plugin in Jenkins
+
+ 
+
+One of the components of SonarQube is the "Sonar Scanner," which is a command-line tool used to analyze projects and submit the results to the SonarQube server for processing and reporting. We have to follow these two steps for the installation. 
+
+    Download sonar-scanner-cli using wget
+
+Here we will download the latest version of the binary:
+cd /opt
+wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
+ls
+
+    Install the zip tool, using the yum command. this tool can help you to  unarchive zipped files
+
+yum install unzip -y
+
+    Unzip the tar file
+
+unzip sonar-scanner-cli-4.8.0.2856-linux.zip
+
+    Run ls to see the folder that unzip has created.
+
+    Delete the downloaded zip file, then rename the folder created by the unzip command to sonar-scanner
+
+ls
+rm -rf sonar-scanner-cli-4.8.0.2856-linux.zip
+ls
+mv sonar-scanner-4.8.0.2856-linux/ sonar-scanner
+
+We will then use the path /opt/sonar-scanner to configure our environment variable
+
+2- Configure the sonar-scanner environment variable in the Jenkins server terminal
+
+The name of the variable is SONAR_RUNNER_HOME and the value must be set to the path where sonar-scanner is found (/opt/sonar-scanner). Open the .bash_profile file and set the sonar environment variable
+sudo -i
+vi ~/.bash_profile 
+
+    Save the modification and check if the environment variable is correctly set with the following command:
+
+source ~/.bash_profile
+echo $SONAR_RUNNER_HOME
+
+3- Sonar-scanner configuration in Jenkins web interface
+
+Once on the Jenkins web interface
+
+    Click on Manage Jenkins then on Plugins
+
+    Under the Available Plugins tab as shown in the image below, search for Sonar using the filter.  Then check the box for the SonarQube Scanner 
+
+    Click on Install and wait for the installation to complete 
+
+image-20240415-191559.png
+
+ 
+
+    Now, click on Dashboard go to Manage Jenkins, and click on Tools
+
+    Under the SonarQube Scanner section, click on Add SonarQube Scanner, uncheck the Install Automatically box then put these configurations:
+
+        Name: SonarQube
+
+        SONAR_RUNNER_HOME: /opt/sonar-scanner
+
+    Click on Apply then on Save to save the sonar scanner path in our Jenkins web interface
+
+    Configure the Sonarcloud server for analysis:  
+
+        Now, click on Dashboard, go to Manage Jenkins, and click on System
+
+        Under the SonarQube servers section, click on Add SonarQube
+
+            Name: sonarQube
+
+            Server URL: https://sonarcloud.io
+
+    Scroll down and add the Sonarcloud server properties, then apply and save
+
+Congratulations, you have successfully integrated SonarQube into Jenkins. Now let’s go ahead and use this tool on a Project: Jenkins-Sonarcloud Project
+
+ 
+https://dataservicegroup.atlassian.net/wiki/x/QQArh

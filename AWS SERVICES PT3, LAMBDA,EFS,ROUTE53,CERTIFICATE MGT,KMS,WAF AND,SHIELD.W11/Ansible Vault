@@ -1,0 +1,100 @@
+8- Ansible Vault
+Be the first to add a reaction
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Sep 10, 2024 by Estephe Kana
+3 min read
+
+This tutorial will help you to understand everything about Ansible Vault.
+
+At the end of this document, you will be able to understand,
+
+    What is Ansible Vault?
+
+    How to Encrypt the Ansible Playbooks?
+
+    How to decrypt it?
+
+    How to view and edit if required?
+
+    How to reset a new Ansible vault password?
+
+Prerequisite:
+
+    Ansible Terraform lab is up and running
+
+How to use Ansible Vault to Protect Ansible Playbooks
+What is Ansible Vault?
+
+Ansible Vault is a feature of Ansible which allows us to protect sensitive data with encryption in a playbook such as data files, usernames, passwords, and configurations.
+
+If any Ansible playbook is encrypted, even an Ansible administrator cannot read a playbook with any editors without providing a valid vault password. It's not publicly visible.
+How to encrypt an Ansible Playbook?
+
+Here we are going to encrypt our first-playbook.yml
+
+    Move into the Ansible dev directory
+
+cd ansible-dev
+
+    Use the option "encrypt" along with the Ansible-vault command. Enter the vault password twice you wish to set for the particular playbook first-playbook.yml, this password is only for this file.
+
+ansible-vault encrypt first-playbook.yml
+image-20240109-064604.png
+
+Yes, "first-playbook.yml" is encrypted.
+
+Now, if anyone tries to open the protected file with any normal editors, it cannot be readable by the users because it's encrypted.
+image-20240109-065056.png
+
+So Once any playbook is encrypted with the Ansible-vault command, you have to use the Ansible vault command to manage the encrypted file as below.
+How to view an encrypted playbook file?
+
+Use the "view" option along with ansible-vault command and enter the vault password.
+ansible-vault view first-playbook.yml
+image-20240109-065255.png
+
+Use the "edit" option along with ansible-vault command and enter the vault password. This will use your default editor set in your user environment.
+ansible-vault edit first-playbook.yml
+image-20240510-100535.png
+image-20240510-100443.png
+
+Once you have done the changes, save and exit from the file.
+How to run an encrypted Ansible playbook file?
+
+If a playbook is encrypted, We cannot run it as we do normally. Otherwise, you would get an error as below.
+ansible-playbook first-playbook.yml
+image-20240109-065653.png
+
+Instead, we can use the argument "--ask-vault-pass" to provide the vault password or Save your vault password in a file and call it using the argument "--vault-password-file".
+
+Using the argument "--ask-vault-pass"
+ansible-playbook first-playbook.yml --ask-vault-pass
+
+Enter the vault password when it prompts to run the Ansible playbook.
+Using the argument "--vault-password-file"
+
+Before running, create a new file with the command:  vi vault-passwd, add your vault password in and save it.
+
+Once it’s done, run the playbook again.
+ansible-playbook first-playbook.yml --vault-password-file vault-passwd
+
+This time, the vault password will be taken from the file you have provided, hence it won't prompt you to enter the vault password again.
+
+If you are not allowed to store the password in a clear format, then use only "--ask-vault-pass" argument.
+How to change an existing vault password?
+
+Use the "rekey" option along with ansible-vault command. Enter the old vault password and enter the new password twice.
+ansible-vault rekey first-playbook.yml
+image-20240510-103221.png
+How to decrypt a protected Ansible playbook file?
+
+Use the "decrypt" option along with ansible-vault command,
+ansible-vault decrypt first-playbook.yml
+image-20240510-103346.png
+
+Now the playbook is decrypted.
+
+We just saw how to use Ansible Vault to protect and encrypt playbooks. You can go ahead and practice to understand better.
+
+https://dataservicegroup.atlassian.net/wiki/x/UYD3iw

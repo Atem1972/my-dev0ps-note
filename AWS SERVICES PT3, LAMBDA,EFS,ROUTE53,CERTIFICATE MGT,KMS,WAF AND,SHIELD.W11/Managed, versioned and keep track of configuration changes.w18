@@ -1,0 +1,53 @@
+
+Managed, versioned and keep track of configuration changes.
+September 15, 2024
+Lesson Progress
+0% Complete
+MARCH WE 2024 MARCH 2024 W18: Ansible 2 (Ansible playbook part 2, Ansible roles, Ansible vault) Managed, versioned and keep track of configuration changes.
+In Progress
+
+In your company, the Dev and QA use the same Ansible master machine to run playbooks for the dev and QA’s various deployments. The ansible master used by the prod team is a completely different server.
+
+You are required to design a workflow such that the various team members will not write or modify playbooks in the Ansible master directly. This is to keep track and version all the changes for eventual rollback.
+
+    All the playbooks will be stored in GitHub and based on the commit.
+    A Jenkins pipeline will be triggered to push these playbooks to the required Ansible master server ( for Dev and QA and UAT, it will just push to the same server but in a different path with different users.).
+
+The various teams can now login with their corresponding user account and execute the playbooks. To design this workflow you came out with the following  Design.
+
+WorkFlow Design
+
+The workflow can be divided into multiple steps.
+
+Development stage
+
+In this stage, you create a GitHub repository where all the playbooks will be committed. This repository has 3 branches or more depending on the number of environments.
+
+        Dev: whenever there is a new playbook or there is a modification, it is committed to the dev branch.
+        QA: Once the changes have been confirmed by the dev, a pull request is made from the Dev branch to the QA branch.
+        Prod: When everything is Good with  QA, a pull request is submitted and will go through the proper approval process for the code to merge to the master branch which will be deployed to production.
+
+From here we can notice that we can’t modify anything on the Prod without passing through the Dev and QA and we can’t modify the playbooks on the QA without passing through the Dev.
+
+Deployment stage 
+
+In this stage you create 2 users ( or more for various env) on the ansible master used by Dev and QA then a Prod user on the ansible master used by the prod team.
+
+To run a playbook, each team had to login with its credentials. Note that the playbooks have just a read permission so no one can modify it directly.
+
+After creating these users, you then create a Jenkins pipeline that is triggered to push the changes to the various Ansible servers.
+
+How does the Jenkins pipeline work?
+
+        When there is a push to the Dev branch, the Jenkins pipeline is triggered by a webhook.
+        This pipeline then verifies the playbook syntax and if everything is ok, it then pushes the changes to the Test ansible server using the credentials of the Dev user.
+        If there is any problem, a notification will be sent through the Slack channel to notify us that the playbook had errors. (we can also integrate some code/YAML testing in the Jenkins pipeline)
+        Once everything is okay with the Dev, a pull request will be made to the QA branch.
+        Once the request is accepted, Jenkins detects the change and then checks the syntax.
+        If everything is ok, it pushes to the test ansible master using QA user credentials.
+        Once all is Good with the QA, a pull request is made on the main branch
+        And once accepted, or approved, a webhook is triggered which then causes the Jenkins pipeline to deploy the playbooks and push it to a prod ansible server using the prod team access credentials.
+
+Go ahead and execute this project implementation to help manage, version and keep track of our change configuration.
+
+Any suggestion is welcome.

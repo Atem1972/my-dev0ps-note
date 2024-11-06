@@ -1,0 +1,151 @@
+1- Basic Ansible Concepts
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Sep 10, 2024 by Estephe Kana
+3 min read
+Introduction
+
+Ansible has emerged as a powerful and popular open-source automation tool that simplifies configuration management, application deployment, and task automation. In this section, we'll look into the fundamental concepts of Ansible.
+1. What is Ansible, and how does it work?
+
+Ansible is an automation tool for automating repetitive tasks such as:
+
+    Configuration management.
+
+    Application deployment, and task execution. 
+
+It uses a simple and human-readable language to define automation scripts, making it accessible for both beginners and experienced professionals. Ansible works over SSH, enabling communication with remote servers.
+2. Ansible vs. Other Configuration Management Tools
+
+Ansible stands out from tools like Puppet and Chef by adopting an agentless architecture. Unlike Puppet and Chef:
+
+    Ansible does not require a client-server setup, making it easier to set up and use. 
+
+    The agentless approach simplifies deployment and eliminates the need for software installation on managed nodes. Generally, Ansible employs the idea of playbooks for writing configurations. Let's define playbooks, but we will later look at playbooks in detail. 
+
+3. How Ansible works 
+ 
+
+    Ansible uses the concepts of control and managed nodes. It connects from the control node, any machine with Ansible installed, to the managed nodes, sending commands and instructions to them.
+
+    The units of code Ansible executes on the managed nodes are called modules. 
+
+    Each module is invoked by a task and an ordered list of tasks together forms a playbook. 
+
+    Users write playbooks with tasks and modules to define the desired state of the system.
+
+    The managed machines are represented in a simplistic inventory file that groups all the nodes into different categories.
+
+    Ansible leverages a very simple language, YAML, to define playbooks in a human-readable data format that is easy to understand from day one.
+
+4. Why do we use Ansible? Advantages of Ansible
+
+    We have various automation tools like Puppet, Chef, and Salt Stack. However, Ansible stands out due to its advantages.
+
+        Ansible is free and open source.
+
+        Agentless - No master-client model, no need for client-side agents.
+
+        Uses SSH for operations on the existing network.
+
+        Low system requirements.
+
+        Developed in Python for quick deployment on Unix and Linux systems.
+
+        Lightweight and fast deployment using SSH without master-client communication.
+
+        Utilizes YAML syntax in configuration files.
+
+        Boasts a large and engaged community for support.
+
+        Ansible can easily scale from managing a few machines to thousands
+
+5. Ansible Terminologies
+
+    Playbooks:
+
+        Expressed in YAML format, playbooks configure, administer, deploy systems, automate tasks, and orchestrate.
+
+        Define a series of tasks to be executed on hosts.
+
+    Task:
+
+        An individual action that Ansible performs, such as installing software, managing files, or restarting services
+
+        Playbooks run tasks, combining actions with names and other keywords.
+
+        Handlers, a special kind of task, run only when notified by name after a task reports a change.
+
+    Action:
+
+        A part of a task specifies which modules to run and the arguments to pass.
+
+    Facts:
+
+        Information discovered about remote nodes is automatically collected by Ansible.
+
+        Inferred, not set, and can be used in playbooks and templates.
+
+    Hosts and Groups:
+
+        Hosts are remote machines managed by Ansible.
+
+        Groups consist of several hosts with common variables.
+
+    Handlers:
+
+        Tasks that run only when notified by a task indicating a change.
+
+    Ad Hoc:
+
+        Refers to running quick commands using /usr/bin/ansible rather than /usr/bin/ansible-playbook.
+
+    Inventory:
+
+        A file describing hosts and groups that Ansible manages, typically in a simple INI format.
+
+    Modules:
+
+        Units of work shipped out to remote machines, executed by Ansible.
+
+    Library:
+
+        A collection of modules available to /usr/bin/ansible or an Ansible playbook.
+
+    Notify:
+
+        The act of a task registering a change event and informing a handler task.
+
+    Orchestration:
+
+        Modeling complex processes involving multiple systems in a specific order.
+
+    Push Mode and Pull Mode:
+
+        Push mode is the default, allowing fine-grained control.
+
+        Pull mode allows nodes to check in on a schedule.
+
+    Roles:
+
+        Units of an organization assign specific behaviour to hosts or groups.
+
+    Templates:
+
+        Use the Jinja2 template engine to substitute variables in files.
+
+    When (Optional):
+
+        An optional conditional statement is attached to a task to determine if it should run.
+
+    YAML:
+
+        Ansible uses YAML for playbook configuration languages and variable files.
+
+Install Ansible:
+
+In this tutorial, we will launch our Ansible lab with Terraform. The lab will have the managed and the controlled nodes already configured. Follow this tutorial to set up your Lab
+
+ 
+https://dataservicegroup.atlassian.net/wiki/x/AwDeiQ
+

@@ -1,0 +1,396 @@
+Jenkins-Sonarcloud Project
+
+Owned by Suzie Fontang
+Last updated: Sep 28, 2024 by Estephe Kana
+11 min read
+
+Project Context :
+
+    Alain Pierre is the manager of a team of 7 developers of an IT solution development company called E-Max Soft ( a Cameroonian firm of high-end software development). 
+
+    He has just set up a project of Software for the geolocation of patients for their assistance by doctors. 
+
+    The application is for medical doctors and patients. When doctors log in, they see patients' information and when patients log in, they can see their records and appointments.
+
+    His team, being only experienced in DEV, has created a GitHub repository for the codes of this project. 
+
+    These developers use the Java language, HTML, and JavaScript to write their code, as build tools, they use Maven to compile their source code in an archaic way. 
+
+    Alain Pierre the manager of this very ambitious project recruits you to this team as a DevOps engineer. 
+
+With the notions learned at Utrains, your :
+
+1- First mission within this team is to set up the source code analysis for this project.
+
+2- The second mission would be to migrate the database to the AWS cloud,
+
+3- The third and last mission will be to integrate Artifactory or Nexus and then to implement the continuous deployment
+
+In this tutorial, we will accomplish the first mission
+Steps to accomplish the first mission
+
+ 
+
+The major steps to accomplish this first mission:
+
+Step 1: Install and configure a Jenkins server for the project
+
+Step 2: Integrate Maven in Jenkins: the build tool 
+
+Step 3: Create a repository in GitHub and then get the project code in this repository
+
+Step 4: Create a maven project in Jenkins and link it to our GitHub project 
+
+Step 5: create an account in SonarCloud and Integrate SonarCloud in Jenkins  
+
+Step 6: Perform the first code analysis 
+
+Step 7: Build the job in Jenkins and check the Result
+Prerequisites
+
+Before starting this tutorial, you must:
+
+    Have a GitHub account
+
+    Have a Jenkins server up and running and access it through the terminal and the web browser
+
+    JAVA_HOME, Git, and Maven should be configured on the server.
+
+    You must have an account on SonarCloud and it should be integrated into the Jenkins server
+
+Step 1: Install and configure a Jenkins server for the project
+
+Here, you must make sure you have a Jenkins server up and running. If you don’t yet have one, you can go through the steps on the following page: Jenkins server installation in AWS EC2 using Terraform
+Step 2: Configure Jenkins (JAVA_HOME, git and Maven)
+
+Here, you must make sure the JAVA_HOME path is well configured on the Jenkins server. You must also install and configure git and maven on the server. If that is not yet done,  you can go through the steps on the following page: Jenkins server configuration (JAVA_HOME, git, and Maven)
+Step 3: Create a repository in GitHub and then get the project code in this repository
+
+Log in to your GitHub account 
+
+a- Create a repository in GitHub named geolocation   
+
+    Click on the sign + to create a new repository then choose New Repository
+
+    Give it a valid name: geolocation
+
+    Make sure the repository is Public 
+
+    Check the button to Initialize this repository with a README file 
+
+    Click on Create repository
+
+b- Clone the Repository locally
+
+    On the geolocation repo, click on Code 
+
+    Click on the sign to copy the link
+
+ 
+
+    Now, open the Git bash app in your system, switch to the devops-test folder  
+
+cd devops-test
+
+    Create a folder in there for this project
+
+mkdir jenkins-sonarcloud-practice
+cd jenkins-sonarcloud-practice
+
+    Use the git clone command to clone the repository here
+
+git clone paste-the-link-here 
+ls
+c- Clone Alain Pierre team’s Project
+
+    Now, we will clone the Alain Pierre repository which contains the source code of the geolocation project. 
+
+git clone https://github.com/utrains/geoMVPX0.git
+
+    We have now the geoMVPX0 directory in our folder. der
+
+d- Copy the content of the team's repository to our test repository 
+
+    we have to copy the content of the geoMVPX0 repository into the geolocation  repository (wait for the copy to complete)
+
+cp -r geoMVPX0/* geolocation/
+cd geolocation
+ls
+e- Commit the changes in our repo
+git add --all
+git commit -m "First commit for Geolocation"
+git push origin main
+
+    If you open your repository, you will be able to see all the files and folders that are added to it.
+
+    Now we have the source codes of the geolocation project in a repository that will allow us to perform the Sonar analysis.
+
+Step 4: Create a maven project in Jenkins and link it to our GitHub project 
+
+Login to your Jenkins server web interface
+
+    Click on New item and select Maven project. Click on OK to create the project
+
+    Now, open your GitHub account page and choose the geolocation repository 
+
+    Click on Code and copy the link for clone creation
+
+    In the Jenkins tab of the browser choose the maven project that we created
+
+    Click on Configure, to configure the Maven project
+
+        In the Source code management tab, click on the radio button Git
+
+            Repository URL: Paste the link for clone creation
+
+            Put the branch specifier on the main branch: */main 
+
+    Now, click on Apply and on Save
+
+Step 5: Create an account on SonarCloud and integrate it in Jenkins
+
+Here, you must make sure you have an account on Sonarcloud and that it is linked to your GitHub account. If that is not yet done, follow the steps in the following document: Sonarcloud integration on jenkins
+Step 6: Perform the first code analysis 
+a- Manual code analysis  in the SonarCloud interface
+
+Login to your SonarCloud account and click on My Projects then on Analyze new project
+
+ 
+
+    The list of all the projects you have in your GitHub account is displayed here. Just check the project we want to analyze. In our case, it will be geolocation.
+
+ 
+image-20240416-201505.png
+
+ 
+
+    After about 5 minutes, you will see the results of the very first analysis of our project displayed in SonarCloud.
+
+    Here clicking on each of the numbers will give the DEVs the details to solve each of the vulnerabilities.
+
+    You can click on Overview to see the overview of the code analysis (you can see the various programming languages that were used by the developers and much more information that will help correct bugs and improve the quality of the final product)
+
+    Now we have to configure our project in collaboration with the developers:
+
+        Provide them with the information to add in the pom.xml file to reference the sonar account to automate the analysis with our Jenkins server.
+
+        Configure our Jenkins server so that the analysis is done automatically when the developers have done the push on the main branch
+
+        Provide the analysis results to the developer so that they can improve the quality of the project source code.
+
+b- Automated code analysis  using Jenkins - Sonarcloud
+
+Here, we want to automate the code analysis process so that each time the developers push a code on the main branch of the Github repository, a code analysis process gets started. 
+
+First, we need to retrieve the necessary information for the automation of the analysis
+
+    In the SonarCloud interface of the geolocation project, click on Administration then on Analysis Method
+
+The page that appears contains information on the different automation methods. Here, we will just choose the manually method, because Jenkins does not exist on the different methods.
+
+To get the information, click on the Manually method
+
+Disable the automatic analysis by clicking on the button to put it OFF
+
+Now, select the Maven option since we want to build a Maven project. You will get the necessary information for our configuration
+
+Your interface might look different. Just look for the information mention
+
+In this image, there is a couple of information needed to configure our project: the token, the maven properties, and the maven command to run.
+
+Token Information :
+
+This token will allow communication between SonarCloud and Jenkins or any other tools.
+
+Maven Properties :
+	
+
+Here, we have the configuration properties of our Maven project. These properties must be added in the pom.xml file. Generally, it is the DevOps engineer who provides these configs to the developer.
+
+Example here:
+<properties>
+  <sonar.organization>hermann90</sonar.organization>
+  <sonar.host.url><https://sonarcloud.io</sonar.host.url>>
+</properties>
+
+The mvn command
+	
+
+The command that will launch the analysis from the Jenkins server. Example here:
+mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=Hermann90_geolocation
+
+But here we want Jenkins to execute automatically not the developer running the command locally.
+
+Based on the information available in the image above, we will collect the information for the configuration in Jenkins. We need :
+
+ 
+
+ 
+
+The project key
+	
+
+We have this information in mvn command in the image above. In my case, we have sonar.projectKey=Hermann90_geolocation
+
+Project organization
+	
+
+We have this information in the Maven properties: 
+sonar.organization=hermann90
+
+Host URL
+	
+
+This Is the URL or address of the server where Sonar is located. We have this information in the Maven properties:
+sonar.host.url=
+
+ 
+
+Project Login
+	
+
+For the login, we will use the token that is in the image above. In my case it would be :
+
+sonar.login=fd919376d610d8e6115f830a6579530cde1cdade
+
+Other information (source and Java binaries)
+	
+
+Information to tell Sonar the directory where the source codes are located that it wants to analyze, and the directory where the binary files are located.
+
+sonar.sources=src
+
+sonar.java.binaries=.
+
+Summary of my configuration information
+sonar.projectKey=Hermann90_geolocation
+sonar.organization=hermann90
+sonar.host.url=https://sonarcloud.io
+sonar.login=fd919376d610d8e6115f830a6579530cde1cdade
+sonar.sources=src
+sonar.java.binaries=.
+
+Now, we need to add the Sonarcloud config in the Geolocation project from the Jenkins web interface.
+Step 7: Build the job and check the Result
+
+Open the geolocation project we have created in the Jenkins web interface
+
+    Click on Configure 
+
+    Go to Pre Step Bloc
+
+    Click on Add pre-built step then in the popup that appears, choose Execute SonarQube Scanner
+
+ 
+
+    In the Analysis properties in Pre Steps Section
+
+A section appears where we will put the Sonar analysis settings. Here, copy and paste in the Analysis properties sub-section all the Sonar properties (projectkey, organization, ...) that we have explained above.
+
+My configuration was: Put in yours then click on Apply then Save
+sonar.projectKey=Hermann90_geolocation
+sonar.organization=hermann90
+sonar.host.url=https://sonarcloud.io
+sonar.login=fd919376d610d8e6115f830a6579530cde1cdade
+sonar.sources=src
+sonar.java.binaries=.
+
+ 
+
+    Click on Build Now to generate the build of our project. Before generating this build, the sonar analysis is performed.
+
+ Note: You can have at this point this error : 
+
+Solution: Administration → Analysis Method → Uncheck on Recommended (point 3)
+
+    When you open the Jenkins web console, you can see the different analysis actions that are performed before the build. At one step, you have the capture below that reflects the end of the sonar analysis execution with success.
+
+    When everything is done, we notice :
+
+        The appearance of Sonar icons: this means that the project integrates the Sonar analysis
+
+        The number (6 in my case) of built-in green colour.
+
+    Let's display the analysis results in Sonar.
+
+After clicking on the Sonar icon, we are redirected to the sonar analysis page where we can see the curve of the code quality evolution.
+
+    We can see the evolution of the analysis curve in time.
+
+Here we are already at the second analysis: you can click on Main Branch at the left panel, then on the Activity tab to see that
+
+    the first analysis made when creating the project in SonarCloud
+
+    the second analysis by Jenkins
+
+ 
+
+ 
+
+Note: If you click on the analysis date or approach the graph with the cursor, the summary of the analysis is displayed.
+
+When the code analysis is done, feedback must be sent to the developer's team.
+Extra content: see how developers manually deploy the application
+
+Let's see how the developer deploys the application to proceed to test and bug fixes.
+
+1- The traditional method to deploy the application:
+After the sonar analysis, a build of the application is done and a jar file is generated. The jar file embeds the executable codes of the application and a Tomcat Server that will allow us to deploy the application.
+
+Deployment process :
+
+If all goes well at the sonar analysis stage, then you can deploy the application on the Jenkins server (not recommended) to see what the application looks like.
+
+    Connect to the Jenkins server and open the directory that was created after the sonar analysis (all the projects are in the /var/lib/jenkins/workspace/ directory)
+
+cd /var/lib/jenkins/workspace/geolocation/target
+ls
+
+We can see our Jar files
+
+    Use the command java -jar name_of_the_jar_ file to start the application. 
+
+If you don't have enough memory, stop the Jenkins server before doing so. Because in practice, the application has to be deployed on a different server where Java and Maven are installed.
+
+Here, we will do it on our Jenkins server
+java -jar bioMedical-0.0.1-SNAPSHOT.jar
+
+    Start the Java application
+
+    Open the browser, then enter the public DNS of the Jenkins server followed by the port number to open the application: 192.168.56.177:8082
+
+Remember to open the port 8082 on the security group of the server in AWS. If not the page will not display the expected result.
+
+ 
+
+    Login page: use the following credentials
+
+        email: student@utrains.test
+
+        password: school1 
+
+    App Admin Dashboard
+
+    Admin Details and Database
+
+This application uses a MySql database. Here, the developers have created a database for the tests which is stored in the application's memory and it is the one that displays the data.
+
+    Simple patient interface
+
+Log out from the administration page, then log in with a user profile 
+
+    email: root@utrains.test 
+
+    password: root_pass
+
+Here we can see that the page that the users see is different, this is the role management that our Dev friends have already implemented in this application.
+
+    Here is the main page for simple Patients
+
+ Exercise: Create an AMI in AWS with the current state of your Jenkins server.
+Clean Up:
+
+Remember to destroy the infrastructure to avoid further charges on AWS 
+
+
+https://dataservicegroup.atlassian.net/wiki/x/DwBbhg

@@ -1,0 +1,115 @@
+7- Ansible roles tutorial
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Sep 10, 2024 by Estephe Kana
+3 min read
+Introduction
+
+Ansible is an open-source automation tool that simplifies the configuration management of IT infrastructure. It enables you to automate repetitive tasks such as application deployment, infrastructure orchestration, and configuration management in a scalable and efficient manner. One of the key features of Ansible is its ability to organize tasks into reusable and shareable units called roles. In this guide, we will explain Ansible roles and provide a step-by-step example of how to use roles to install Apache on a CentOS server.
+1- Creating an Ansible Role
+
+To create an Ansible role, you need to follow a specific directory structure that Ansible expects. The following is an example directory structure for an Apache role:
+apache/
+    ├── tasks/
+    │   └── main.yml
+    ├── files/
+    ├── templates/
+    ├── vars/
+    ├── defaults/
+    ├── meta/
+    └── README.md
+
+Let's go ahead and create a sample template that we will use to create a role to install Apache.
+
+    SSH to your master server,
+
+    then move into the ansible-directory
+
+cd ansible-dev
+
+    Once in the directory, run the command below in the structure above:
+
+ansible-galaxy init apache --offline
+
+Let's go through each of these directories:
+
+    tasks - This directory contains the main task file for the role. In the case of the Apache role, the main task file would be called main.yml. This is where you define the tasks that the role will perform.
+
+    files - This directory contains any files that the role needs to copy to the remote system.
+
+    templates - This directory contains any Jinja2 templates that the role needs to use.
+
+    vars - This directory contains any variable files that the role needs to use.
+
+    defaults - This directory contains default variables that the role can use if no other variables are defined.
+
+    meta - This directory contains metadata about the role, such as the author and the role dependencies.
+
+    Readme   - This is an optional file that provides documentation for the role.
+
+2- Defining Tasks in a Role
+
+The main task file for a role contains the tasks that the role will perform. 
+
+    cd in apache
+
+cd apache/tasks
+
+    open the main.yml and paste (append)  the code below on it.
+
+vi main.yml
+
+Here's a  task file for the Apache role:
+- name: Install Apache web server
+  become: true
+  apt:
+    name: apache2
+    state: present
+  tags:
+    - apache
+- name: Start Apache service
+  become: true
+  service:
+    name: apache2
+    state: started
+  tags:
+    - apache
+
+This task will install the Apache web server using the apt module. The become keyword is used to elevate the privileges of the user running the playbook to become a superuser. The tags keyword is used to tag the task for later use. Additionally, the second task will start the Apache service once the installation is completed.
+3- Using a Role in a Playbook
+
+Once you've defined a role, you can use it in a playbook. 
+
+    cd back to the ansible-dev directory and create a playbook to use the role
+
+cd ~/ansible-dev
+
+    Create a file  apache-role-play, paste the code below and save
+
+vi apache-role-play.yml
+---
+- name: Install Apache web server
+  hosts: databaseservers
+  become: true
+  roles:
+    - apache
+
+This playbook will install the Apache web server on the hosts specified in the databaseservers group. The become keyword is used to elevate privileges, and the roles keyword is used to specify the roles that should be applied.
+4- Running the Playbook
+
+To run the playbook, you can use the ansible-playbook command:
+ansible-playbook  apache-role-play.yml
+
+This command will run the main.yml file from the apache role.
+image-20240510-092410.png
+
+Once the playbook runs successfully, visit the public IP of node 2 to verify that Apache was installed.
+
+You will get the display below:
+image-20240510-093630.png
+5- Conclusion
+
+Ansible roles provide a way to organize and structure your automation code in a modular and reusable way. By using roles, you can avoid code duplication and reduce the maintenance effort
+
+
+https://dataservicegroup.atlassian.net/wiki/x/AQDMgg

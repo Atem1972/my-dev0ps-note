@@ -1,0 +1,153 @@
+5- Writing and running an ansible playbook
+
+Owned by noel.tatah (Unlicensed)
+Last updated: Sep 10, 2024 by Estephe Kana
+5 min read
+
+In this section, we will write a sample playbook and run it. 
+
+Note we are going to use the environment we created in ansible Terraform lab
+Writing a playbook
+
+SSH into your master server.
+
+Now cd into the ansible-dev directory
+cd ansible-dev
+
+Create a file called first-playbook.yaml
+vi first-playbook.yml
+
+pastes the code below in it and save 
+---
+- hosts: webservers
+  ignore_errors: True
+  become: True
+  tasks:
+  - name: Create a user
+    user:
+     name: mysuser
+     comment: Carlos Monte
+  - name: Create a file on target host
+    file:
+     path: /tmp/ansiblefile
+     state: touch
+  - name: Create a directory
+    file:
+     path: /opt/directory_ansible
+     state: directory
+  - name: Install apache
+    package:
+     name: "{{ 'httpd' if ansible_distribution == 'Amazon' else 'apache2' }}"
+     state: present
+    when: ansible_distribution == "Amazon" or ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"
+
+  - name: Start the apache service
+    service:
+     name: "{{ 'httpd' if ansible_distribution == 'Amazon' else 'apache2' }}"
+     state: started
+    when: ansible_distribution == "Amazon" or ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"
+
+ Before we run the playbook, let's run a detailed description.
+Playbook break down
+
+ 
+- hosts: webservers 
+  ignore_errors: True
+  become: True
+
+    - hosts: webservers: This line specifies the group of servers to which the playbook will apply. In this case, it is the group "webservers".
+
+    ignore_errors: True: This line tells Ansible to continue executing the playbook even if there are errors encountered during the process.
+
+    become: True: This line tells Ansible to escalate privileges to become the superuser (root) on the remote server when executing the playbook. This is often necessary to perform certain actions that require administrative access.
+
+tasks:
+  - name: Create a user
+    user:
+     name: mysuser
+     comment: Carlos Monte
+  - name: Create a file on target host
+    file:
+     path: /tmp/ansiblefile
+     state: touch
+  - name: Create a directory
+    file:
+     path: /opt/directory_ansible
+     state: directory
+  - name: Install apache
+    package:
+     name: "{{ 'httpd' if ansible_distribution == 'Amazon' else 'apache2' }}"
+     state: present
+    when: ansible_distribution == "Amazon" or ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"
+
+  - name: Start the apache service
+    service:
+     name: "{{ 'httpd' if ansible_distribution == 'Amazon' else 'apache2' }}"
+     state: started
+    when: ansible_distribution == "Amazon" or ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"
+
+    tasks:: This line marks the beginning of the tasks section of the playbook, where each task is defined as a separate item in a list.
+
+    - name: Create a user: This line defines the first task, which creates a new user account called "mysuser" with the comment "Carlos Monte". The task uses the Ansible user module.
+
+    user:: This line specifies that the user module will be used to create the new user.
+
+    name: mysuser: This line specifies the username of the new user.
+
+    comment: Carlos Monte: This line provides a comment for the new user account.
+
+    - name: Create a file on target host: This line defines the second task, which creates a file called "/tmp/ansiblefile" on the remote server. The file module is used to create the file and set its state to "touch".
+
+    file:: This line specifies that the file module will be used to create the new file.
+
+    path: /tmp/ansiblefile: This line specifies the path and filename of the new file.
+
+    state: touch: This line specifies that the file should be created if it does not exist, or updated with a new timestamp if it already exists.
+
+    - name: Create a directory: This line defines the third task, which creates a new directory called "/opt/directory_ansible" on the remote server using the file module and setting the state to "directory".
+
+    path: /opt/directory_ansible: This line specifies the path of the new directory.
+
+    state: directory: This line specifies that a new directory should be created if it does not exist, or the existing directory should be updated with the appropriate permissions and ownership.
+
+    - name: Install apache: This line defines the fourth task, which uses the package module to install the Apache web server on the remote server.
+
+    package:: This module is used to manage packages on Linux systems.
+
+    name: : This is the name of the package we want to install. The name is conditionally set based on the Linux distribution. If the distribution is Amazon Linux, it uses the package name httpd, which is used for Apache on Amazon Linux. For Ubuntu and Debian, it uses the package name apache2.
+
+     state: present : This line specifies that the package should be installed if it is not already present on the remote server.
+
+    when: This is a conditional statement that checks if the current distribution is Amazon Linux, Ubuntu, or Debian. If any of these conditions are met, the task will be executed.
+
+    - name: Start the apache service: This line defines the fifth and final task, which uses the service module to start the Apache web server service.
+
+    service:: This line specifies that the service module will be used to manage the Apache web server service.
+
+    name: This is the name of the service we want to manage. Just like before, the name is conditionally set based on the Linux distribution. If the distribution is Amazon Linux, it uses the service name httpd, which is used for Apache on Amazon Linux. For Ubuntu and Debian, it uses the service name apache2.
+
+    state: started: This line specifies that the service should be started if it is not already running.
+
+Overall, this playbook automates the process of creating a new user account, creating a file and directory on the remote server, installing the Apache web server package and starting the Apache web server service.
+Running the playbook
+
+    Before running the playbook, we must make sure it contains no errors
+
+ ansible-playbook ~/ansible-dev/first-playbook.yml --syntax
+
+    If there is an error, solve the problem using the hint provided by the ansible-playbook firstplay.yml --syntax command before running the playbook (check all the lines around the hint)
+
+    Now, you can run the playbook on the target hosts:
+
+ansible-playbook ~/ansible-dev/first-playbook.yml
+NB: The playbook is going to run only on the target hosts specified in it (in this case, the servers in the group webservers)
+
+Go ahead and enter the public IP of your server in the webservers group on the browser to verify if Apache was installed
+
+You should get the Display below.
+
+Congratulations, you just wrote your first Ansible playbook.
+
+You can explore additional playbooks by visiting this GitHub repository for some hands-on practice. Here's the link: (link)
+
+https://dataservicegroup.atlassian.net/wiki/x/yIC3gg

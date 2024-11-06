@@ -1,0 +1,45 @@
+Variable Declarations
+
+Instead of creating 10 tasks for installing 10 different packages, you can create a single task by using variables in the same playbook as below:
+vars:
+  package: vim,yum-utils
+tasks:
+- name: Install Package
+  yum: name={{ package }} state=latest
+
+ 
+
+The above example uses a variable definition (vars:) to install multiple packages, vim and yum-utils. Similarly, you can modify only the package names.
+Using Loops
+
+Loops are typically used to repeat a task using different input values, as we have used variable declaration.
+
+To create a loop within a task, include the option with_items with an array of values. The content can be accessed through the loop variable item, as shown in the example below:
+- name: Install Packages
+  yum: name={{ item }} state=latest
+  with_items:
+    - vim
+    - git
+    - curl
+
+You can also use an array variable to define your items:
+---
+- hosts: webservers
+  become: true
+  vars:
+    packages: [ 'vim', 'git', 'curl' ]
+  tasks:
+  - name: Install Package
+    yum: name={{ item }} state=latest
+    with_items: packages
+Getting help for Modules and their arguments:
+
+To list all modules available in Ansible, use the command below (use q to exit from the prompt):
+ansible-doc -l
+
+If you are not sure about the value of modules like state, Documentation for each module can be accessed from the command line with the ansible-doc tool:
+ansible-doc yum
+
+So hope you have got an idea of the Ansible Playbook. Going forward we will play more with ansible tool.
+
+https://dataservicegroup.atlassian.net/wiki/x/ioDwiw
